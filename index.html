@@ -661,6 +661,73 @@ button {
       </p>
       <button class="secondary" id="interviewUnlockBtn" onclick="unlock('interview')">Get Interview Accelerator for £49</button>
     </div>
+
+    <div class="section-heading">
+      <h2>Career Toolkit</h2>
+      <p class="muted">The complete career-change package — a recruiter-grade CV rewrite, a 90-day roadmap, skills gap plan, networking playbook, and personal brand story.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card" id="card-cv-rewrite">
+        <h3>CV Rewrite</h3>
+        <p class="blur">
+          A full recruiter-grade CV rewrite tailored to the target role — summary,
+          experience bullets reworked around outcomes, skills section, and education,
+          all grounded in evidence from the profile.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-roadmap">
+        <h3>90-Day Career Roadmap</h3>
+        <p class="blur">
+          A month-by-month plan covering the next 90 days — what to fix first,
+          who to talk to, what to build or ship, and how to measure progress
+          toward landing the target role.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-skills-gap">
+        <h3>Skills Gap Plan</h3>
+        <p class="blur">
+          The five highest-leverage skills to develop, why each matters for
+          the target role, and a concrete way to demonstrate each one within
+          90 days.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-networking">
+        <h3>Networking Playbook</h3>
+        <p class="blur">
+          A target list of the people and companies to reach, plus three
+          ready-to-send scripts for cold outreach, reactivating dormant
+          contacts, and asking for warm referrals.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-brand-story">
+        <h3>Personal Brand Story</h3>
+        <p class="blur">
+          The narrative spine the candidate uses everywhere — a 60-second
+          intro, the "why this role" answer, and the signature story that
+          makes them memorable to a hiring panel.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+    </div>
+
+    <div class="paywall" id="careerPaywall">
+      <h2 id="careerPaywallHeading">Get the Career Toolkit</h2>
+      <p id="careerPaywallSub" class="sub" style="margin: 8px auto 22px;">
+        The complete career-change package — recruiter-grade CV rewrite,
+        90-day roadmap, skills gap plan, networking playbook, and personal
+        brand story, all tailored to the profile and target role.
+      </p>
+      <button class="secondary" id="careerUnlockBtn" onclick="unlock('career')">Get Career Toolkit for £99</button>
+    </div>
   </section>
 
 </div>
@@ -668,11 +735,13 @@ button {
 <script>
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu9AT0Ou6I26jE9y4fQI01";
 const INTERVIEW_PAYMENT_LINK = "https://buy.stripe.com/4gMfZhbt8c2m5fAaC8fQI02";
+const CAREER_PAYMENT_LINK = "https://buy.stripe.com/6oUcN58gWgiCbDYeSofQI03";
 const STORAGE_KEY = "lla:lastReport";
 
 const PAYMENT_LINKS = {
   audit: STRIPE_PAYMENT_LINK,
   interview: INTERVIEW_PAYMENT_LINK,
+  career: CAREER_PAYMENT_LINK,
 };
 
 function showError(message) {
@@ -786,7 +855,7 @@ function unlock(product) {
 
   const url = new URL(link);
   // The webhook splits this on `:` to know which product was bought.
-  const ref = product === "interview" ? `${stored.sessionId}:interview` : stored.sessionId;
+  const ref = product === "audit" ? stored.sessionId : `${stored.sessionId}:${product}`;
   url.searchParams.set("client_reference_id", ref);
   // Hint Stripe to come back to our site after payment with the unlock flag set.
   url.searchParams.set("success_url", `${window.location.origin}/?unlock=${product}`);
@@ -955,8 +1024,118 @@ function renderInterview(report) {
   }
 }
 
+function renderCareer(report) {
+  const cv = report.cvRewrite || {};
+  const cvExperienceHtml = (Array.isArray(cv.experience) ? cv.experience : [])
+    .map((role) => {
+      const bullets = Array.isArray(role.bullets) ? role.bullets : [];
+      const bulletsHtml = bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("");
+      return `<div class="prep-day">
+        <div class="label">${escapeHtml(role.period || "")}</div>
+        <p class="focus">${escapeHtml(role.title || "")} — ${escapeHtml(role.company || "")}</p>
+        <ul>${bulletsHtml}</ul>
+      </div>`;
+    })
+    .join("");
+  const cvSkills = Array.isArray(cv.skills) ? cv.skills : [];
+  const cvSkillsHtml = cvSkills.length
+    ? `<div class="star-block"><p class="star-label">Skills</p><p>${escapeHtml(cvSkills.join(" · "))}</p></div>`
+    : "";
+  const cvEducation = Array.isArray(cv.education) ? cv.education : [];
+  const cvEducationHtml = cvEducation.length
+    ? `<div class="star-block"><p class="star-label">Education</p>${cvEducation
+        .map((e) => `<p>${escapeHtml(e)}</p>`)
+        .join("")}</div>`
+    : "";
+  fillUnlockedCard(
+    "card-cv-rewrite",
+    `<div class="star-block"><p class="star-label">Summary</p><p>${escapeHtml(cv.summary || "")}</p></div>
+     ${cvExperienceHtml}
+     ${cvSkillsHtml}
+     ${cvEducationHtml}`,
+  );
+
+  const months = Array.isArray(report.roadmap) ? report.roadmap : [];
+  const monthsHtml = months
+    .map((m) => {
+      const milestones = Array.isArray(m.milestones) ? m.milestones : [];
+      const mHtml = milestones.map((x) => `<li>${escapeHtml(x)}</li>`).join("");
+      return `<div class="plan-week">
+        <div class="theme">Month ${escapeHtml(String(m.month ?? ""))} — ${escapeHtml(m.focus || "")}</div>
+        <p class="angle">${escapeHtml(m.objective || "")}</p>
+        <ul style="margin: 8px 0 0; padding-left: 20px; color: #d1d5db; line-height: 1.65; font-size: 14.5px;">${mHtml}</ul>
+      </div>`;
+    })
+    .join("");
+  fillUnlockedCard("card-roadmap", monthsHtml);
+
+  const skills = Array.isArray(report.skillsGapPlan) ? report.skillsGapPlan : [];
+  const skillsHtml = skills
+    .map(
+      (s) => `<div class="smart-item">
+        <p class="question">${escapeHtml(s.skill || "")}</p>
+        <div class="star-block"><p class="star-label">Why it matters</p><p>${escapeHtml(s.whyItMatters || "")}</p></div>
+        <div class="star-block"><p class="star-label">How to demonstrate it</p><p>${escapeHtml(s.howToDemonstrate || "")}</p></div>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard("card-skills-gap", skillsHtml);
+
+  const networking = report.networkingPlan || {};
+  const targets = Array.isArray(networking.targets) ? networking.targets : [];
+  const targetsHtml = targets
+    .map(
+      (t) => `<div class="q-item">
+        <div class="label">${escapeHtml(t.priority || "")}</div>
+        <p class="question">${escapeHtml(t.who || "")}</p>
+        <p class="approach">${escapeHtml(t.why || "")}</p>
+      </div>`,
+    )
+    .join("");
+  const netScripts = Array.isArray(networking.scripts) ? networking.scripts : [];
+  const netScriptsHtml = netScripts
+    .map(
+      (s) => `<div class="script">
+        <div class="label">${escapeHtml(s.scenario || "")}</div>
+        <p class="subj">${escapeHtml(s.subject || "")}</p>
+        <p class="body">${escapeHtml(s.body || "")}</p>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard(
+    "card-networking",
+    `<div class="q-list">${targetsHtml}</div><div class="scripts" style="margin-top: 18px;">${netScriptsHtml}</div>`,
+  );
+
+  const brand = report.brandStory || {};
+  fillUnlockedCard(
+    "card-brand-story",
+    `<div class="positioning">
+      <p class="statement">${escapeHtml(brand.headline || "")}</p>
+      <div class="star-block"><p class="star-label">60-second intro</p><p>${escapeHtml(brand.elevatorPitch || "")}</p></div>
+      <div class="star-block"><p class="star-label">Why this role</p><p>${escapeHtml(brand.whyThisRole || "")}</p></div>
+      <div class="star-block"><p class="star-label">Signature story</p><p>${escapeHtml(brand.signatureStory || "")}</p></div>
+    </div>`,
+  );
+
+  const paywall = document.getElementById("careerPaywall");
+  if (paywall) {
+    paywall.innerHTML = `
+      <h2>Your Career Toolkit is unlocked</h2>
+      <p class="sub" style="margin: 8px auto 22px;">
+        Save the CV rewrite, work the 90-day roadmap, and use the brand story everywhere.
+      </p>
+    `;
+  }
+}
+
 function setUnlockingState(message, target) {
-  const id = target === "interview" ? "interviewPaywall" : "paywall";
+  const id =
+    target === "interview"
+      ? "interviewPaywall"
+      : target === "career"
+        ? "careerPaywall"
+        : "paywall";
   const paywall = document.getElementById(id);
   if (!paywall) return;
   paywall.innerHTML = `
@@ -968,8 +1147,13 @@ function setUnlockingState(message, target) {
 }
 
 async function pollUnlock(sessionId, product) {
-  product = product === "interview" ? "interview" : "audit";
-  const paywallId = product === "interview" ? "interviewPaywall" : "paywall";
+  if (product !== "interview" && product !== "career") product = "audit";
+  const paywallId =
+    product === "interview"
+      ? "interviewPaywall"
+      : product === "career"
+        ? "careerPaywall"
+        : "paywall";
   setUnlockingState("Confirming your payment…", product);
 
   const deadline = Date.now() + 1000 * 60 * 3; // 3 minutes
@@ -987,6 +1171,8 @@ async function pollUnlock(sessionId, product) {
       if (res.ok && data.status === "ready" && data.report) {
         if (product === "interview") {
           renderInterview(data.report);
+        } else if (product === "career") {
+          renderCareer(data.report);
         } else {
           renderPremium(data.report);
         }
@@ -1053,7 +1239,12 @@ function reset() {
 
   if (unlockParam) {
     renderFreeReport(stored);
-    const product = unlockParam === "interview" ? "interview" : "audit";
+    const product =
+      unlockParam === "interview"
+        ? "interview"
+        : unlockParam === "career"
+          ? "career"
+          : "audit";
     pollUnlock(stored.sessionId, product);
     return;
   }
@@ -1062,7 +1253,7 @@ function reset() {
   // (e.g. user revisits the page later), surface it silently.
   (async () => {
     let restoredScreen = false;
-    for (const product of ["audit", "interview"]) {
+    for (const product of ["audit", "interview", "career"]) {
       try {
         const res = await fetch("/api/unlock", {
           method: "POST",
@@ -1077,6 +1268,7 @@ function reset() {
           restoredScreen = true;
         }
         if (product === "interview") renderInterview(data.report);
+        else if (product === "career") renderCareer(data.report);
         else renderPremium(data.report);
       } catch {
         // ignore — best-effort restore.

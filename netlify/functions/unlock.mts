@@ -4,7 +4,7 @@ import { getStore } from '@netlify/blobs'
 
 const anthropic = new Anthropic()
 
-type Product = 'audit' | 'interview'
+type Product = 'audit' | 'interview' | 'career'
 
 type UnlockRequest = {
   sessionId?: unknown
@@ -98,6 +98,61 @@ type InterviewReport = {
     scripts: SalaryScript[]
   }
   prepPlan: PrepDay[]
+}
+
+type CvExperience = {
+  title: string
+  company: string
+  period: string
+  bullets: string[]
+}
+
+type CvRewrite = {
+  summary: string
+  experience: CvExperience[]
+  skills: string[]
+  education: string[]
+}
+
+type RoadmapMonth = {
+  month: number
+  focus: string
+  objective: string
+  milestones: string[]
+}
+
+type SkillsGapItem = {
+  skill: string
+  whyItMatters: string
+  howToDemonstrate: string
+}
+
+type NetworkingTarget = {
+  priority: string
+  who: string
+  why: string
+}
+
+type NetworkingScript = {
+  scenario: string
+  subject: string
+  body: string
+}
+
+type CareerReport = {
+  cvRewrite: CvRewrite
+  roadmap: RoadmapMonth[]
+  skillsGapPlan: SkillsGapItem[]
+  networkingPlan: {
+    targets: NetworkingTarget[]
+    scripts: NetworkingScript[]
+  }
+  brandStory: {
+    headline: string
+    elevatorPitch: string
+    whyThisRole: string
+    signatureStory: string
+  }
 }
 
 const AUDIT_SYSTEM_PROMPT = `You are an elite LinkedIn career strategist and recruiter (15+ years placing senior candidates at top firms). You write the deliverables a candidate would receive after paying for a one-on-one engagement.
@@ -196,6 +251,74 @@ Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no e
       "tasks": string[]               // 3-4 concrete tasks for that day, specific enough to act on.
     }
   ]
+}`
+
+const CAREER_SYSTEM_PROMPT = `You are an elite career strategist and executive coach (15+ years guiding senior candidates through career changes at top firms). You write the toolkit a candidate would receive after paying for an intensive multi-week engagement.
+
+You are given:
+1. The candidate's pasted LinkedIn profile (verbatim).
+2. Their target role and optional target industry.
+3. The free-tier audit (score, headline rewrite, strengths, improvements).
+
+Your job is to produce five career-toolkit deliverables, all grounded strictly in evidence from the candidate's profile. NEVER invent employers, titles, dates, metrics, or credentials that are not in the source. If the profile is thin in a given area, write that section cautiously and tell the candidate where to fill the gap.
+
+Voice: confident, specific, recruiter-grade British English. Direct, not flowery. No buzzword soup, no "passionate about", no "results-driven", no emoji. CV bullets and brand story are written in first person where appropriate for the candidate to use directly.
+
+Calibrate every deliverable to the target role and the candidate's seniority. The CV rewrite and roadmap should feel like a logical continuation of the free audit, not a contradiction.
+
+Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no extra keys, matching this TypeScript type:
+
+{
+  "cvRewrite": {
+    "summary": string,                // 3-5 sentence professional summary at the top of the CV. First person implied (CV style). Leads with the outcome the candidate creates and the role they want next. 350-550 chars.
+    "experience": [                   // One entry per role visible in the profile, most recent first. Include every role the profile describes with enough detail to rewrite. Do NOT invent roles.
+      {
+        "title": string,              // The role title as on the profile (or a tightened version that means the same thing).
+        "company": string,            // Company name as it appears in the profile.
+        "period": string,             // The dates as in the profile, e.g. "2021 — 2024" or "2019 — Present".
+        "bullets": string[]           // 3-5 bullets per role. Each bullet starts with a strong action verb, names a specific outcome, and quantifies wherever the profile supports it. Each bullet 18-30 words.
+      }
+    ],
+    "skills": string[],               // 8-14 skills/keywords for the target role. Only include skills evidenced or strongly implied by the profile.
+    "education": string[]             // Each entry one line, e.g. "MBA, London Business School, 2018". Only include what's in the profile.
+  },
+  "roadmap": [                        // Exactly 3 entries, one per month over the next 90 days.
+    {
+      "month": number,                // 1, 2, or 3.
+      "focus": string,                // ~10 words. The strategic focus of that month (e.g. "Month 1 — Tighten narrative and rebuild signal").
+      "objective": string,            // 1-2 sentences naming the single outcome the candidate is aiming for that month.
+      "milestones": string[]          // 4-6 concrete milestones for the month, specific enough that the candidate knows whether they hit them. Reference the profile, target role, or industry where relevant.
+    }
+  ],
+  "skillsGapPlan": [                  // Exactly 5 skills the candidate needs to develop or signal more strongly to win the target role.
+    {
+      "skill": string,                // The skill, named precisely (e.g. "B2B SaaS commercial pricing", not "communication").
+      "whyItMatters": string,         // 2-3 sentences. Why this skill matters for the target role and what the gap looks like given the profile evidence.
+      "howToDemonstrate": string      // 2-3 sentences. A concrete way to develop and demonstrate the skill within 90 days — a project, a talk, a piece of writing, a side gig, a cert, etc. Specific to the candidate.
+    }
+  ],
+  "networkingPlan": {
+    "targets": [                      // Exactly 8 target people or archetypes to reach. Mix: 2 hiring managers at target companies, 2 in-house recruiters in the target space, 2 peer practitioners (potential allies/referrers), 2 dormant contacts (former colleagues / classmates / weak ties). Use archetypes ("Heads of Product at Series B fintechs in London") rather than inventing real names.
+      {
+        "priority": string,           // "Tier 1", "Tier 2", or "Tier 3" — how high to prioritise this archetype.
+        "who": string,                // The archetype, named precisely.
+        "why": string                 // 1-2 sentences explaining why this archetype is high-leverage for this candidate's target role.
+      }
+    ],
+    "scripts": [                      // Exactly 3 outreach scripts, one per scenario below.
+      {
+        "scenario": string,           // One of: "Cold outreach to a hiring manager", "Reactivating a dormant contact", "Asking for a warm referral".
+        "subject": string,            // Subject line under 60 chars.
+        "body": string                // 80-130 word message. First person, polite, specific to the candidate's profile, easy to forward where applicable.
+      }
+    ]
+  },
+  "brandStory": {
+    "headline": string,               // ONE sentence (max 25 words) that the candidate uses as the spine of their story. Specific outcome + who it's for + unique mechanism.
+    "elevatorPitch": string,          // The 60-second intro the candidate uses at networking events, written verbatim in first person. 110-160 words. Anchored to specific evidence from the profile.
+    "whyThisRole": string,            // The candidate's answer to "Why are you interested in this role?", written in first person. 4-6 sentences. Connects past evidence to the target role honestly.
+    "signatureStory": string          // The single memorable story the candidate tells in interviews and at events, written in first person. 5-7 sentences. Drawn from a specific moment in the profile, with a clear lesson and a clear outcome.
+  }
 }`
 
 function clampString(value: unknown, max = 64): string {
@@ -329,11 +452,110 @@ function coerceInterview(value: unknown): InterviewReport {
   return { likelyQuestions, starAnswers, smartQuestions, salaryPlaybook, prepPlan }
 }
 
+function coerceCareer(value: unknown): CareerReport {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Career response was not an object')
+  }
+  const v = value as Record<string, unknown>
+
+  const cvRaw = (v.cvRewrite ?? {}) as Record<string, unknown>
+  const experienceRaw = Array.isArray(cvRaw.experience) ? cvRaw.experience : []
+  const cvRewrite: CvRewrite = {
+    summary: asString(cvRaw.summary),
+    experience: experienceRaw.map((e) => {
+      const r = (e ?? {}) as Record<string, unknown>
+      const bullets = Array.isArray(r.bullets)
+        ? r.bullets.filter((b): b is string => typeof b === 'string').map((b) => b.trim()).filter(Boolean)
+        : []
+      return {
+        title: asString(r.title),
+        company: asString(r.company),
+        period: asString(r.period),
+        bullets,
+      }
+    }),
+    skills: Array.isArray(cvRaw.skills)
+      ? cvRaw.skills.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : [],
+    education: Array.isArray(cvRaw.education)
+      ? cvRaw.education.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : [],
+  }
+
+  const roadmapRaw = Array.isArray(v.roadmap) ? v.roadmap : []
+  const roadmap: RoadmapMonth[] = roadmapRaw.map((m, idx) => {
+    const r = (m ?? {}) as Record<string, unknown>
+    const milestones = Array.isArray(r.milestones)
+      ? r.milestones.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : []
+    return {
+      month: typeof r.month === 'number' ? r.month : idx + 1,
+      focus: asString(r.focus),
+      objective: asString(r.objective),
+      milestones,
+    }
+  })
+
+  const skillsRaw = Array.isArray(v.skillsGapPlan) ? v.skillsGapPlan : []
+  const skillsGapPlan: SkillsGapItem[] = skillsRaw.map((s) => {
+    const r = (s ?? {}) as Record<string, unknown>
+    return {
+      skill: asString(r.skill),
+      whyItMatters: asString(r.whyItMatters),
+      howToDemonstrate: asString(r.howToDemonstrate),
+    }
+  })
+
+  const networkingRaw = (v.networkingPlan ?? {}) as Record<string, unknown>
+  const targetsRaw = Array.isArray(networkingRaw.targets) ? networkingRaw.targets : []
+  const targets: NetworkingTarget[] = targetsRaw.map((t) => {
+    const r = (t ?? {}) as Record<string, unknown>
+    return { priority: asString(r.priority), who: asString(r.who), why: asString(r.why) }
+  })
+  const netScriptsRaw = Array.isArray(networkingRaw.scripts) ? networkingRaw.scripts : []
+  const netScripts: NetworkingScript[] = netScriptsRaw.map((s) => {
+    const r = (s ?? {}) as Record<string, unknown>
+    return { scenario: asString(r.scenario), subject: asString(r.subject), body: asString(r.body) }
+  })
+
+  const brandRaw = (v.brandStory ?? {}) as Record<string, unknown>
+  const brandStory = {
+    headline: asString(brandRaw.headline),
+    elevatorPitch: asString(brandRaw.elevatorPitch),
+    whyThisRole: asString(brandRaw.whyThisRole),
+    signatureStory: asString(brandRaw.signatureStory),
+  }
+
+  if (
+    !cvRewrite.summary ||
+    cvRewrite.experience.length === 0 ||
+    roadmap.length === 0 ||
+    skillsGapPlan.length === 0 ||
+    !brandStory.headline
+  ) {
+    throw new Error('Career response missing required fields')
+  }
+
+  return {
+    cvRewrite,
+    roadmap,
+    skillsGapPlan,
+    networkingPlan: { targets, scripts: netScripts },
+    brandStory,
+  }
+}
+
 function storesFor(product: Product) {
   if (product === 'interview') {
     return {
       paid: getStore({ name: 'paid-interview-sessions', consistency: 'strong' }),
       reports: getStore({ name: 'interview-reports', consistency: 'strong' }),
+    }
+  }
+  if (product === 'career') {
+    return {
+      paid: getStore({ name: 'paid-career-sessions', consistency: 'strong' }),
+      reports: getStore({ name: 'career-reports', consistency: 'strong' }),
     }
   }
   return {
@@ -359,7 +581,8 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Missing or invalid sessionId.' }, { status: 400 })
   }
 
-  const product: Product = body.product === 'interview' ? 'interview' : 'audit'
+  const product: Product =
+    body.product === 'interview' ? 'interview' : body.product === 'career' ? 'career' : 'audit'
 
   const sessions = getStore({ name: 'sessions', consistency: 'strong' })
   const { paid, reports } = storesFor(product)
@@ -380,6 +603,13 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Session expired or not found.' }, { status: 404 })
   }
 
+  const finalInstruction =
+    product === 'interview'
+      ? 'Produce the interview-prep deliverables now. Return only the JSON object specified in the system prompt.'
+      : product === 'career'
+        ? 'Produce the career-toolkit deliverables now. Return only the JSON object specified in the system prompt.'
+        : 'Produce the premium deliverables now. Return only the JSON object specified in the system prompt.'
+
   const userPrompt = [
     `Target role: ${session.role}`,
     session.industry ? `Target industry: ${session.industry}` : 'Target industry: (not specified)',
@@ -392,17 +622,23 @@ export default async (req: Request, _context: Context) => {
     session.profile,
     '"""',
     '',
-    product === 'interview'
-      ? 'Produce the interview-prep deliverables now. Return only the JSON object specified in the system prompt.'
-      : 'Produce the premium deliverables now. Return only the JSON object specified in the system prompt.',
+    finalInstruction,
   ].join('\n')
+
+  const systemPrompt =
+    product === 'interview'
+      ? INTERVIEW_SYSTEM_PROMPT
+      : product === 'career'
+        ? CAREER_SYSTEM_PROMPT
+        : AUDIT_SYSTEM_PROMPT
+  const maxTokens = product === 'interview' ? 7000 : product === 'career' ? 8000 : 6000
 
   let message
   try {
     message = await anthropic.messages.create({
       model: 'claude-opus-4-7',
-      max_tokens: product === 'interview' ? 7000 : 6000,
-      system: product === 'interview' ? INTERVIEW_SYSTEM_PROMPT : AUDIT_SYSTEM_PROMPT,
+      max_tokens: maxTokens,
+      system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     })
   } catch (err) {
@@ -415,10 +651,15 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Model returned no text' }, { status: 502 })
   }
 
-  let report: AuditReport | InterviewReport
+  let report: AuditReport | InterviewReport | CareerReport
   try {
     const parsed = extractJson(textBlock.text)
-    report = product === 'interview' ? coerceInterview(parsed) : coerceAudit(parsed)
+    report =
+      product === 'interview'
+        ? coerceInterview(parsed)
+        : product === 'career'
+          ? coerceCareer(parsed)
+          : coerceAudit(parsed)
   } catch (err) {
     const detail = err instanceof Error ? err.message : 'Unknown error'
     return Response.json({ error: `Could not parse model response: ${detail}` }, { status: 502 })
