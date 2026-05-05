@@ -1,0 +1,12 @@
+{
+  "name": "linkedin-leverage-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.1",
+    "@netlify/blobs": "^8.1.0",
+    "@netlify/functions": "^2.8.2",
+    "stripe": "^17.5.0"
+  }
+}

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Leverage AI</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(37,99,235,.35), transparent 35%),
+    radial-gradient(circle at bottom left, rgba(14,165,233,.18), transparent 35%),
+    #020617;
+  color: white;
+}
+
+.app {
+  max-width: 1180px;
+  margin: auto;
+  padding: 32px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 70px;
+}
+
+.brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #2563eb;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  box-shadow: 0 15px 40px rgba(37,99,235,.45);
+}
+
+h1 {
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: .95;
+  letter-spacing: -2px;
+  margin: 0;
+}
+
+h2, h3 { margin-top: 0; }
+
+.brand h2 { margin: 0; }
+.brand p, .muted { color: #94a3b8; margin: 4px 0 0; }
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 44px;
+  align-items: center;
+}
+
+.sub {
+  color: #cbd5e1;
+  font-size: 19px;
+  line-height: 1.65;
+  max-width: 620px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(37,99,235,.22);
+  color: #bfdbfe;
+  font-weight: 800;
+  font-size: 14px;
+  margin-bottom: 22px;
+  border: 1px solid rgba(147,197,253,.22);
+}
+
+.success {
+  background: rgba(16,185,129,.18);
+  color: #a7f3d0;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 32px;
+}
+
+.features div, .panel, .card, .reportHero, .paywall {
+  background: rgba(255,255,255,.09);
+  border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(16px);
+  border-radius: 28px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.28);
+}
+
+.features div {
+  padding: 18px;
+  font-weight: 800;
+  color: #dbeafe;
+}
+
+.panel {
+  padding: 30px;
+}
+
+label {
+  display: block;
+  margin: 18px 0 8px;
+  color: #cbd5e1;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+textarea, input {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(2,6,23,.75);
+  color: white;
+  padding: 16px;
+  font-size: 15px;
+  outline: none;
+}
+
+textarea {
+  height: 150px;
+  resize: vertical;
+}
+
+button {
+  border: 0;
+  border-radius: 18px;
+  padding: 15px 22px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.primary {
+  width: 100%;
+  margin-top: 22px;
+  background: #2563eb;
+  color: white;
+}
+
+.secondary {
+  background: white;
+  color: #020617;
+}
+
+.ghost {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255,255,255,.22);
+  margin-left: 8px;
+}
+
+.hidden { display: none; }
+
+.reportHero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px;
+  margin-bottom: 26px;
+}
+
+.score {
+  min-width: 150px;
+  background: rgba(2,6,23,.75);
+  border-radius: 24px;
+  padding: 22px;
+  text-align: center;
+}
+
+.score strong {
+  display: block;
+  font-size: 56px;
+  color: #93c5fd;
+}
+
+.score span { color: #94a3b8; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.card {
+  position: relative;
+  padding: 26px;
+  min-height: 250px;
+  overflow: hidden;
+}
+
+.card p {
+  color: #d1d5db;
+  line-height: 1.65;
+}
+
+.card.unlocked {
+  min-height: auto;
+}
+
+.card pre.about {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.scripts .script {
+  margin-bottom: 18px;
+  padding: 16px;
+  background: rgba(2,6,23,.55);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+}
+
+.scripts .script:last-child { margin-bottom: 0; }
+
+.scripts .script .label {
+  font-size: 12px;
+  letter-spacing: .8px;
+  color: #93c5fd;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.scripts .script .subj {
+  color: #f8fafc;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.scripts .script .body {
+  white-space: pre-wrap;
+  color: #d1d5db;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.plan-week {
+  margin-bottom: 18px;
+}
+
+.plan-week:last-child { margin-bottom: 0; }
+
+.plan-week .theme {
+  color: #93c5fd;
+  font-weight: 800;
+  margin-bottom: 10px;
+  font-size: 14px;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+.plan-post {
+  border-left: 2px solid rgba(147,197,253,.45);
+  padding: 4px 0 4px 14px;
+  margin: 12px 0;
+}
+
+.plan-post .meta {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.plan-post .hook {
+  color: #f1f5f9;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.plan-post .angle {
+  color: #cbd5e1;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.positioning .statement {
+  font-size: 22px;
+  line-height: 1.45;
+  color: #f8fafc;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.positioning .rationale {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.blur {
+  filter: blur(5px);
+  opacity: .55;
+}
+
+.lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2,6,23,.74);
+  font-weight: 900;
+}
+
+.paywall {
+  margin-top: 28px;
+  text-align: center;
+  padding: 34px;
+  background: linear-gradient(135deg, rgba(37,99,235,.35), rgba(14,165,233,.12));
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.25);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: -2px;
+  margin-right: 8px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 850px) {
+  .hero, .cards, .features {
+    grid-template-columns: 1fr;
+  }
+
+  header, .reportHero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <div class="logo">Li</div>
+      <div>
+        <h2>LinkedIn Leverage AI</h2>
+        <p>Turn your profile into a job offer engine</p>
+      </div>
+    </div>
+    <span class="pill success">AI-powered</span>
+  </header>
+
+  <section id="screen1" class="hero">
+    <div>
+      <span class="pill">New &middot; Personalised report in 30 seconds</span>
+      <h1>Stop being invisible on LinkedIn.</h1>
+      <p class="sub">
+        Paste your profile, tell us the role you want, and get a recruiter-grade
+        rewrite, a content plan, and a positioning strategy designed to land interviews.
+      </p>
+      <div class="features">
+        <div>Headline rewrite</div>
+        <div>Post ideas</div>
+        <div>Outreach scripts</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Generate your report</h3>
+      <p class="muted">Takes 30 seconds. No signup required.</p>
+
+      <label for="profile">Paste your LinkedIn profile</label>
+      <textarea id="profile" placeholder="Copy your About section, experience, and skills..."></textarea>
+
+      <label for="role">Target role</label>
+      <input id="role" placeholder="e.g. Senior Product Manager" />
+
+      <label for="industry">Industry (optional)</label>
+      <input id="industry" placeholder="e.g. FinTech, SaaS, Healthcare" />
+
+      <button class="primary" id="generateBtn" onclick="generate()">Generate Report</button>
+      <p id="error" class="muted hidden" style="color: #fca5a5; margin-top: 12px;"></p>
+    </div>
+  </section>
+
+  <section id="screen2" class="hidden">
+    <div class="reportHero">
+      <div>
+        <span class="pill success">Your report is ready</span>
+        <h1>Profile audit</h1>
+        <p class="sub">Here's how your profile scores against recruiters searching for your target role.</p>
+      </div>
+      <div class="score">
+        <strong id="score">0</strong>
+        <span>Profile score / 100</span>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>New Headline</h3>
+        <p id="headline"></p>
+      </div>
+
+      <div class="card">
+        <h3>Post Idea</h3>
+        <p id="postIdea"></p>
+      </div>
+
+      <div class="card">
+        <h3>Strengths</h3>
+        <ul id="strengths" style="margin: 0; padding-left: 20px; color: #d1d5db; line-height: 1.65;"></ul>
+      </div>
+
+      <div class="card">
+        <h3>Improvements</h3>
+        <ul id="improvements" style="margin: 0; padding-left: 20px; color: #d1d5db; line-height: 1.65;"></ul>
+      </div>
+
+      <div class="card" id="card-about">
+        <h3>About Section Rewrite</h3>
+        <p class="blur">
+          A recruiter-grade rewrite that puts your most valuable outcomes in the
+          first three lines, makes you searchable for the right keywords, and
+          ends with a clear call-to-action that triggers inbound messages.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-outreach">
+        <h3>Outreach Scripts</h3>
+        <p class="blur">
+          Three message templates: one for hiring managers, one for recruiters,
+          and one for warm referrals — each tested to get replies above 35%.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-plan">
+        <h3>30-Day Content Plan</h3>
+        <p class="blur">
+          A week-by-week posting schedule with hooks, formats, and topics
+          mapped to the role you want — designed to attract the right
+          recruiters into your DMs.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-positioning">
+        <h3>Positioning Strategy</h3>
+        <p class="blur">
+          The single sentence that defines what you do, who you do it for,
+          and the outcome you produce — so every recruiter instantly
+          understands your value.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+    </div>
+
+    <div class="paywall" id="paywall">
+      <h2 id="paywallHeading">Unlock your full report</h2>
+      <p id="paywallSub" class="sub" style="margin: 8px auto 22px;">
+        Get the full About rewrite, outreach scripts, 30-day content plan, and positioning strategy.
+      </p>
+      <button class="secondary" id="unlockBtn" onclick="unlock()">Unlock for £19</button>
+      <button class="ghost" onclick="reset()">Start Again</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu9AT0Ou6I26jE9y4fQI01";
+const STORAGE_KEY = "lla:lastReport";
+
+function showError(message) {
+  const el = document.getElementById("error");
+  el.innerText = message;
+  el.classList.remove("hidden");
+}
+
+function clearError() {
+  const el = document.getElementById("error");
+  el.innerText = "";
+  el.classList.add("hidden");
+}
+
+function renderList(id, items) {
+  const ul = document.getElementById(id);
+  ul.innerHTML = "";
+  (items || []).forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    ul.appendChild(li);
+  });
+}
+
+function persistReport(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage may be disabled; the unlock flow will still work for the current tab.
+  }
+}
+
+function loadReport() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function renderFreeReport(data) {
+  document.getElementById("score").innerText = data.score ?? 0;
+  document.getElementById("headline").innerText = data.headline ?? "";
+  document.getElementById("postIdea").innerText = data.postIdea ?? "";
+  renderList("strengths", data.strengths);
+  renderList("improvements", data.improvements);
+  document.getElementById("screen1").classList.add("hidden");
+  document.getElementById("screen2").classList.remove("hidden");
+}
+
+async function generate() {
+  const profile = document.getElementById("profile").value.trim();
+  const role = document.getElementById("role").value.trim();
+  const industry = document.getElementById("industry").value.trim();
+  const btn = document.getElementById("generateBtn");
+
+  clearError();
+
+  if (!profile || !role) {
+    showError("Please paste your profile and add a target role.");
+    return;
+  }
+
+  const originalLabel = btn.innerText;
+  btn.disabled = true;
+  btn.innerText = "Analysing your profile…";
+
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile, role, industry }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      showError(data.error || `Analysis failed (${res.status}).`);
+      return;
+    }
+
+    persistReport({
+      sessionId: data.sessionId,
+      score: data.score,
+      headline: data.headline,
+      postIdea: data.postIdea,
+      strengths: data.strengths,
+      improvements: data.improvements,
+    });
+
+    renderFreeReport(data);
+    window.scrollTo(0, 0);
+  } catch (err) {
+    showError("Network error. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = originalLabel;
+  }
+}
+
+function unlock() {
+  const stored = loadReport();
+  if (!stored || !stored.sessionId) {
+    alert("Your session has expired. Please regenerate the free report first.");
+    return;
+  }
+
+  const url = new URL(STRIPE_PAYMENT_LINK);
+  url.searchParams.set("client_reference_id", stored.sessionId);
+  // Hint Stripe to come back to our site after payment with the unlock flag set.
+  url.searchParams.set("success_url", `${window.location.origin}/?unlock=1`);
+  window.location.href = url.toString();
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function fillUnlockedCard(id, innerHTML) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  const heading = card.querySelector("h3");
+  const headingHtml = heading ? heading.outerHTML : "";
+  card.classList.add("unlocked");
+  card.innerHTML = headingHtml + innerHTML;
+}
+
+function renderPremium(report) {
+  fillUnlockedCard(
+    "card-about",
+    `<pre class="about">${escapeHtml(report.aboutRewrite)}</pre>`,
+  );
+
+  const s = report.outreachScripts || {};
+  const scriptHtml = (label, script) => {
+    if (!script) return "";
+    return `<div class="script">
+      <div class="label">${escapeHtml(label)}</div>
+      <p class="subj">${escapeHtml(script.subject || "")}</p>
+      <p class="body">${escapeHtml(script.body || "")}</p>
+    </div>`;
+  };
+  fillUnlockedCard(
+    "card-outreach",
+    `<div class="scripts">
+      ${scriptHtml("Hiring manager", s.hiringManager)}
+      ${scriptHtml("Recruiter", s.recruiter)}
+      ${scriptHtml("Warm referral", s.warmReferral)}
+    </div>`,
+  );
+
+  const weeks = Array.isArray(report.contentPlan) ? report.contentPlan : [];
+  const weeksHtml = weeks
+    .map((w) => {
+      const posts = Array.isArray(w.posts) ? w.posts : [];
+      const postsHtml = posts
+        .map(
+          (p) => `<div class="plan-post">
+          <div class="meta">${escapeHtml(p.day || "")} · ${escapeHtml(p.format || "")}</div>
+          <p class="hook">${escapeHtml(p.hook || "")}</p>
+          <p class="angle">${escapeHtml(p.angle || "")}</p>
+        </div>`,
+        )
+        .join("");
+      return `<div class="plan-week">
+        <div class="theme">Week ${escapeHtml(String(w.week ?? ""))} — ${escapeHtml(w.theme || "")}</div>
+        ${postsHtml}
+      </div>`;
+    })
+    .join("");
+  fillUnlockedCard("card-plan", weeksHtml);
+
+  const pos = report.positioning || {};
+  fillUnlockedCard(
+    "card-positioning",
+    `<div class="positioning">
+      <p class="statement">${escapeHtml(pos.statement || "")}</p>
+      <p class="rationale">${escapeHtml(pos.rationale || "")}</p>
+    </div>`,
+  );
+
+  const paywall = document.getElementById("paywall");
+  paywall.innerHTML = `
+    <h2>Your full report is unlocked</h2>
+    <p class="sub" style="margin: 8px auto 22px;">
+      Save this page or copy each section straight into LinkedIn.
+    </p>
+    <button class="ghost" onclick="reset()">Start Again</button>
+  `;
+}
+
+function setUnlockingState(message) {
+  const paywall = document.getElementById("paywall");
+  paywall.innerHTML = `
+    <h2><span class="spinner"></span>${escapeHtml(message)}</h2>
+    <p class="sub" style="margin: 8px auto 22px;">
+      Stripe usually confirms within a few seconds. This page will update automatically.
+    </p>
+  `;
+}
+
+async function pollUnlock(sessionId) {
+  setUnlockingState("Confirming your payment…");
+
+  const deadline = Date.now() + 1000 * 60 * 3; // 3 minutes
+  let delay = 1500;
+
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch("/api/unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.status === "ready" && data.report) {
+        renderPremium(data.report);
+        return;
+      }
+
+      if (res.status === 402) {
+        setUnlockingState("Waiting for Stripe to confirm payment…");
+      } else if (!res.ok) {
+        const paywall = document.getElementById("paywall");
+        paywall.innerHTML = `
+          <h2>We couldn't unlock your report.</h2>
+          <p class="sub" style="margin: 8px auto 22px;">
+            ${escapeHtml(data.error || "Please refresh in a moment, or contact support if the issue persists.")}
+          </p>
+          <button class="secondary" onclick="location.reload()">Retry</button>
+          <button class="ghost" onclick="reset()">Start Again</button>
+        `;
+        return;
+      }
+    } catch {
+      // Network blip — keep polling.
+    }
+    await new Promise((r) => setTimeout(r, delay));
+    delay = Math.min(delay * 1.4, 6000);
+  }
+
+  const paywall = document.getElementById("paywall");
+  paywall.innerHTML = `
+    <h2>Still waiting on Stripe…</h2>
+    <p class="sub" style="margin: 8px auto 22px;">
+      If you completed payment, click below to retry. Otherwise the unlock will resume the next time you load this page.
+    </p>
+    <button class="secondary" onclick="location.reload()">Retry</button>
+    <button class="ghost" onclick="reset()">Start Again</button>
+  `;
+}
+
+function reset() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {}
+  document.getElementById("screen2").classList.add("hidden");
+  document.getElementById("screen1").classList.remove("hidden");
+  // Clear any unlock flag so we don't immediately try to poll again.
+  if (window.location.search) {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+  window.scrollTo(0, 0);
+}
+
+// On load: if the user is returning from Stripe (?unlock=1) and we have a stored
+// session, restore the report screen and start polling for the premium content.
+(function init() {
+  const params = new URLSearchParams(window.location.search);
+  const returningFromStripe = params.has("unlock");
+  const stored = loadReport();
+  if (returningFromStripe && stored && stored.sessionId) {
+    renderFreeReport(stored);
+    pollUnlock(stored.sessionId);
+  }
+})();
+</script>
+
+</body>
+</html>
