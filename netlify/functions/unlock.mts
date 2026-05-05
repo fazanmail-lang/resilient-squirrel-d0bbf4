@@ -4,8 +4,11 @@ import { getStore } from '@netlify/blobs'
 
 const anthropic = new Anthropic()
 
+type Product = 'audit' | 'interview'
+
 type UnlockRequest = {
   sessionId?: unknown
+  product?: unknown
 }
 
 type StoredFreeResult = {
@@ -42,7 +45,7 @@ type ContentPlanWeek = {
   posts: ContentPlanPost[]
 }
 
-type PremiumReport = {
+type AuditReport = {
   aboutRewrite: string
   outreachScripts: {
     hiringManager: OutreachScript
@@ -56,7 +59,48 @@ type PremiumReport = {
   }
 }
 
-const PREMIUM_SYSTEM_PROMPT = `You are an elite LinkedIn career strategist and recruiter (15+ years placing senior candidates at top firms). You write the deliverables a candidate would receive after paying for a one-on-one engagement.
+type LikelyQuestion = {
+  question: string
+  category: string
+  approach: string
+}
+
+type StarAnswer = {
+  question: string
+  situation: string
+  task: string
+  action: string
+  result: string
+}
+
+type SmartQuestion = {
+  question: string
+  why: string
+}
+
+type SalaryScript = {
+  scenario: string
+  script: string
+}
+
+type PrepDay = {
+  day: string
+  focus: string
+  tasks: string[]
+}
+
+type InterviewReport = {
+  likelyQuestions: LikelyQuestion[]
+  starAnswers: StarAnswer[]
+  smartQuestions: SmartQuestion[]
+  salaryPlaybook: {
+    anchorRangeRationale: string
+    scripts: SalaryScript[]
+  }
+  prepPlan: PrepDay[]
+}
+
+const AUDIT_SYSTEM_PROMPT = `You are an elite LinkedIn career strategist and recruiter (15+ years placing senior candidates at top firms). You write the deliverables a candidate would receive after paying for a one-on-one engagement.
 
 You are given:
 1. The candidate's pasted LinkedIn profile (verbatim).
@@ -98,6 +142,62 @@ Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no e
   }
 }`
 
+const INTERVIEW_SYSTEM_PROMPT = `You are an elite interview coach (15+ years preparing senior candidates for interviews at top firms). You write the prep dossier a candidate would receive after paying for an intensive one-on-one coaching engagement.
+
+You are given:
+1. The candidate's pasted LinkedIn profile (verbatim).
+2. Their target role and optional target industry.
+3. The free-tier audit (score, headline rewrite, strengths, improvements).
+
+Your job is to produce five interview-prep deliverables, all grounded strictly in evidence from the candidate's profile. NEVER invent employers, titles, dates, metrics, or credentials that are not in the source. If the profile is thin in a given area, write that section cautiously and tell the candidate where to fill the gap.
+
+Voice: direct, specific, recruiter-grade British English. No filler ("essentially", "passionate about"), no clichés, no emoji. STAR answers and salary scripts are written in first person for the candidate to rehearse aloud.
+
+Calibrate the difficulty and seniority of every deliverable to the target role. The questions should be the ones THIS candidate will most plausibly face given their level and trajectory.
+
+Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no extra keys, matching this TypeScript type:
+
+{
+  "likelyQuestions": [                // Exactly 10 questions. Mix categories: at least 3 Behavioural, at least 2 Role-specific/Technical, at least 2 Motivation/Fit, plus Leadership/Strategy as appropriate to seniority.
+    {
+      "question": string,             // The question, verbatim, as an interviewer would ask it. 1-2 sentences.
+      "category": string,             // One of: "Behavioural", "Technical", "Role-specific", "Motivation", "Leadership", "Strategy".
+      "approach": string              // 3-4 sentences. How to answer it: the framework to use AND specific evidence from this candidate's profile they should reach for. Name the role, project, or metric by reference.
+    }
+  ],
+  "starAnswers": [                    // Exactly 5 STAR answers, each drawn from a DIFFERENT role/project/period in the profile. Cover a range of common behavioural prompts (conflict, ambiguity, ownership, failure, leadership/influence).
+    {
+      "question": string,             // The behavioural question this answer addresses, e.g. "Tell me about a time you led a project through significant ambiguity."
+      "situation": string,            // 2-3 sentences. Anchored to a specific role, team, and period from the candidate's actual profile.
+      "task": string,                 // 1-2 sentences naming the candidate's specific responsibility.
+      "action": string,               // 4-5 sentences. The bulk of the answer: what THEY personally did, decisions they made, trade-offs they navigated.
+      "result": string                // 2-3 sentences. Quantified where the profile supports it; otherwise describe the qualitative outcome and what they learned.
+    }
+  ],
+  "smartQuestions": [                 // Exactly 8 questions the candidate should ask the interviewer. Mix: 2 about the role/scope, 2 about the team, 2 about strategy/business, 2 about success criteria/growth.
+    {
+      "question": string,             // The question to ask, written exactly as the candidate would say it.
+      "why": string                   // 1-2 sentences. Why asking this signals seniority and fit, and what the candidate should listen for in the answer.
+    }
+  ],
+  "salaryPlaybook": {
+    "anchorRangeRationale": string,   // 3-5 sentences. Reasoning for how the candidate should think about their anchor range, given their seniority signals from the profile and the target role/industry. Do NOT invent specific numbers — instruct the candidate to triangulate from Levels.fyi, Glassdoor, and Blind for their location, and explain how to position within that range.
+    "scripts": [                      // Exactly 3 scripts.
+      {
+        "scenario": string,           // One of: "When asked your expected salary on the first call", "Counter-offer when their first number is below your range", "How to walk away (and keep the door open) if they won't move".
+        "script": string              // 4-6 sentences. First person, ready to rehearse. Polite but firm. Explicit about what the candidate is asking for and why.
+      }
+    ]
+  },
+  "prepPlan": [                       // Exactly 7 entries, one per day in the week before the interview. Day 1 = furthest out (7 days before); Day 7 = day of interview.
+    {
+      "day": string,                  // "Day 1 (7 days out)", "Day 2 (6 days out)", ..., "Day 7 (interview day)".
+      "focus": string,                // ~10 words. The strategic focus of that day.
+      "tasks": string[]               // 3-4 concrete tasks for that day, specific enough to act on.
+    }
+  ]
+}`
+
 function clampString(value: unknown, max = 64): string {
   if (typeof value !== 'string') return ''
   const trimmed = value.trim()
@@ -123,7 +223,7 @@ function asScript(v: unknown): OutreachScript {
   return { subject: asString(r.subject), body: asString(r.body) }
 }
 
-function coercePremium(value: unknown): PremiumReport {
+function coerceAudit(value: unknown): AuditReport {
   if (!value || typeof value !== 'object') {
     throw new Error('Premium response was not an object')
   }
@@ -169,6 +269,79 @@ function coercePremium(value: unknown): PremiumReport {
   return { aboutRewrite, outreachScripts, contentPlan, positioning }
 }
 
+function coerceInterview(value: unknown): InterviewReport {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Interview response was not an object')
+  }
+  const v = value as Record<string, unknown>
+
+  const likelyRaw = Array.isArray(v.likelyQuestions) ? v.likelyQuestions : []
+  const likelyQuestions: LikelyQuestion[] = likelyRaw.map((q) => {
+    const r = (q ?? {}) as Record<string, unknown>
+    return {
+      question: asString(r.question),
+      category: asString(r.category),
+      approach: asString(r.approach),
+    }
+  })
+
+  const starRaw = Array.isArray(v.starAnswers) ? v.starAnswers : []
+  const starAnswers: StarAnswer[] = starRaw.map((s) => {
+    const r = (s ?? {}) as Record<string, unknown>
+    return {
+      question: asString(r.question),
+      situation: asString(r.situation),
+      task: asString(r.task),
+      action: asString(r.action),
+      result: asString(r.result),
+    }
+  })
+
+  const smartRaw = Array.isArray(v.smartQuestions) ? v.smartQuestions : []
+  const smartQuestions: SmartQuestion[] = smartRaw.map((s) => {
+    const r = (s ?? {}) as Record<string, unknown>
+    return { question: asString(r.question), why: asString(r.why) }
+  })
+
+  const salaryRaw = (v.salaryPlaybook ?? {}) as Record<string, unknown>
+  const salaryScriptsRaw = Array.isArray(salaryRaw.scripts) ? salaryRaw.scripts : []
+  const salaryPlaybook = {
+    anchorRangeRationale: asString(salaryRaw.anchorRangeRationale),
+    scripts: salaryScriptsRaw.map((s) => {
+      const r = (s ?? {}) as Record<string, unknown>
+      return { scenario: asString(r.scenario), script: asString(r.script) }
+    }),
+  }
+
+  const prepRaw = Array.isArray(v.prepPlan) ? v.prepPlan : []
+  const prepPlan: PrepDay[] = prepRaw.map((d) => {
+    const r = (d ?? {}) as Record<string, unknown>
+    const tasks = Array.isArray(r.tasks)
+      ? r.tasks.filter((t): t is string => typeof t === 'string').map((t) => t.trim()).filter(Boolean)
+      : []
+    return { day: asString(r.day), focus: asString(r.focus), tasks }
+  })
+
+  if (likelyQuestions.length === 0 || starAnswers.length === 0 || prepPlan.length === 0 || !salaryPlaybook.anchorRangeRationale) {
+    throw new Error('Interview response missing required fields')
+  }
+
+  return { likelyQuestions, starAnswers, smartQuestions, salaryPlaybook, prepPlan }
+}
+
+function storesFor(product: Product) {
+  if (product === 'interview') {
+    return {
+      paid: getStore({ name: 'paid-interview-sessions', consistency: 'strong' }),
+      reports: getStore({ name: 'interview-reports', consistency: 'strong' }),
+    }
+  }
+  return {
+    paid: getStore({ name: 'paid-sessions', consistency: 'strong' }),
+    reports: getStore({ name: 'premium-reports', consistency: 'strong' }),
+  }
+}
+
 export default async (req: Request, _context: Context) => {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 })
@@ -186,19 +359,20 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Missing or invalid sessionId.' }, { status: 400 })
   }
 
+  const product: Product = body.product === 'interview' ? 'interview' : 'audit'
+
   const sessions = getStore({ name: 'sessions', consistency: 'strong' })
-  const paid = getStore({ name: 'paid-sessions', consistency: 'strong' })
-  const reports = getStore({ name: 'premium-reports', consistency: 'strong' })
+  const { paid, reports } = storesFor(product)
 
   const entitlement = await paid.get(sessionId, { type: 'json' })
   if (!entitlement) {
-    return Response.json({ error: 'Payment not yet confirmed.', status: 'pending' }, { status: 402 })
+    return Response.json({ error: 'Payment not yet confirmed.', status: 'pending', product }, { status: 402 })
   }
 
   // Reuse a previously generated report so the candidate can reload without re-spending tokens or money.
-  const cached = (await reports.get(sessionId, { type: 'json' })) as PremiumReport | null
+  const cached = await reports.get(sessionId, { type: 'json' })
   if (cached) {
-    return Response.json({ status: 'ready', report: cached })
+    return Response.json({ status: 'ready', product, report: cached })
   }
 
   const session = (await sessions.get(sessionId, { type: 'json' })) as StoredSession | null
@@ -218,20 +392,22 @@ export default async (req: Request, _context: Context) => {
     session.profile,
     '"""',
     '',
-    'Produce the premium deliverables now. Return only the JSON object specified in the system prompt.',
+    product === 'interview'
+      ? 'Produce the interview-prep deliverables now. Return only the JSON object specified in the system prompt.'
+      : 'Produce the premium deliverables now. Return only the JSON object specified in the system prompt.',
   ].join('\n')
 
   let message
   try {
     message = await anthropic.messages.create({
       model: 'claude-opus-4-7',
-      max_tokens: 6000,
-      system: PREMIUM_SYSTEM_PROMPT,
+      max_tokens: product === 'interview' ? 7000 : 6000,
+      system: product === 'interview' ? INTERVIEW_SYSTEM_PROMPT : AUDIT_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],
     })
   } catch (err) {
     const detail = err instanceof Error ? err.message : 'Unknown error'
-    return Response.json({ error: `Premium generation failed: ${detail}` }, { status: 502 })
+    return Response.json({ error: `Generation failed: ${detail}` }, { status: 502 })
   }
 
   const textBlock = message.content.find((block) => block.type === 'text')
@@ -239,12 +415,13 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Model returned no text' }, { status: 502 })
   }
 
-  let report: PremiumReport
+  let report: AuditReport | InterviewReport
   try {
-    report = coercePremium(extractJson(textBlock.text))
+    const parsed = extractJson(textBlock.text)
+    report = product === 'interview' ? coerceInterview(parsed) : coerceAudit(parsed)
   } catch (err) {
     const detail = err instanceof Error ? err.message : 'Unknown error'
-    return Response.json({ error: `Could not parse premium response: ${detail}` }, { status: 502 })
+    return Response.json({ error: `Could not parse model response: ${detail}` }, { status: 502 })
   }
 
   try {
@@ -253,7 +430,7 @@ export default async (req: Request, _context: Context) => {
     // Caching is best-effort. Returning the report is the priority.
   }
 
-  return Response.json({ status: 'ready', report })
+  return Response.json({ status: 'ready', product, report })
 }
 
 export const config = {

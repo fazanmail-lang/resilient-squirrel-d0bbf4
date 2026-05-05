@@ -47,13 +47,19 @@ export default async (req: Request, _context: Context) => {
 
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
     const session = event.data.object as Stripe.Checkout.Session
-    const sessionId = session.client_reference_id?.trim()
+    const ref = session.client_reference_id?.trim() ?? ''
     const paymentStatus = session.payment_status
+
+    // Format: `${sessionId}` (legacy/audit) or `${sessionId}:interview`.
+    const [sessionId, productSuffix] = ref.split(':')
+    const product = productSuffix === 'interview' ? 'interview' : 'audit'
+    const storeName = product === 'interview' ? 'paid-interview-sessions' : 'paid-sessions'
 
     if (sessionId && paymentStatus === 'paid') {
       try {
-        const paid = getStore({ name: 'paid-sessions', consistency: 'strong' })
+        const paid = getStore({ name: storeName, consistency: 'strong' })
         await paid.setJSON(sessionId, {
+          product,
           stripeCheckoutId: session.id,
           paymentIntent: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
           amountTotal: session.amount_total,
