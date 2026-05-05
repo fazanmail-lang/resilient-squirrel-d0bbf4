@@ -257,6 +257,110 @@ button {
   line-height: 1.6;
 }
 
+.section-heading {
+  margin: 48px 0 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -.5px;
+}
+
+.section-heading .muted {
+  margin: 0;
+  font-size: 15px;
+}
+
+.q-list .q-item, .star-item, .smart-item, .prep-day, .salary-script {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: rgba(2,6,23,.55);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+}
+
+.q-list .q-item:last-child,
+.star-item:last-child,
+.smart-item:last-child,
+.prep-day:last-child,
+.salary-script:last-child { margin-bottom: 0; }
+
+.q-list .q-item .label,
+.star-item .label,
+.prep-day .label,
+.salary-script .label {
+  font-size: 12px;
+  letter-spacing: .8px;
+  color: #93c5fd;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.q-list .q-item .question,
+.star-item .question,
+.smart-item .question,
+.salary-script .scenario {
+  color: #f8fafc;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.q-list .q-item .approach,
+.smart-item .why,
+.salary-script .script-body {
+  color: #d1d5db;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.star-item .star-block {
+  margin-top: 10px;
+}
+
+.star-item .star-block .star-label {
+  font-size: 11px;
+  letter-spacing: .8px;
+  color: #fbbf24;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.star-item .star-block p {
+  color: #d1d5db;
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.prep-day .focus {
+  color: #f8fafc;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.prep-day ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #d1d5db;
+  line-height: 1.65;
+  font-size: 14.5px;
+}
+
+.salary-rationale {
+  color: #d1d5db;
+  line-height: 1.65;
+  margin: 0 0 16px;
+}
+
 .plan-week {
   margin-bottom: 18px;
 }
@@ -488,8 +592,74 @@ button {
       <p id="paywallSub" class="sub" style="margin: 8px auto 22px;">
         Get the full About rewrite, outreach scripts, 30-day content plan, and positioning strategy.
       </p>
-      <button class="secondary" id="unlockBtn" onclick="unlock()">Unlock for £19</button>
+      <button class="secondary" id="unlockBtn" onclick="unlock('audit')">Unlock for £19</button>
       <button class="ghost" onclick="reset()">Start Again</button>
+    </div>
+
+    <div class="section-heading">
+      <h2>Interview Accelerator</h2>
+      <p class="muted">Tailored to your profile and target role — likely questions, STAR answers, smart questions to ask, salary playbook, and a 7-day prep plan.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card" id="card-likely-questions">
+        <h3>Likely Questions</h3>
+        <p class="blur">
+          The 10 questions this candidate is most likely to face for the target
+          role, with a tailored framework for answering each one using specific
+          evidence from the profile.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-star-answers">
+        <h3>STAR Answer Bank</h3>
+        <p class="blur">
+          Five fully written behavioural answers — situation, task, action,
+          result — drawn from different roles and projects in the profile,
+          ready to rehearse aloud.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-smart-questions">
+        <h3>Smart Questions to Ask</h3>
+        <p class="blur">
+          Eight questions to ask the interviewer, mixing role, team, strategy,
+          and success criteria — each chosen to signal seniority and surface
+          the information you actually need.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-salary">
+        <h3>Salary Negotiation Playbook</h3>
+        <p class="blur">
+          How to set your anchor range, plus three scripts: the first-call
+          ask, the counter-offer, and the polite walk-away that keeps the
+          door open.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-prep-plan">
+        <h3>7-Day Prep Plan</h3>
+        <p class="blur">
+          A day-by-day schedule for the week before your interview, with
+          concrete tasks each day so you walk in calm, sharp, and over-prepared.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+    </div>
+
+    <div class="paywall" id="interviewPaywall">
+      <h2 id="interviewPaywallHeading">Get the Interview Accelerator</h2>
+      <p id="interviewPaywallSub" class="sub" style="margin: 8px auto 22px;">
+        Walk into your next interview with likely questions, prepared STAR
+        answers, smart questions, a salary playbook, and a 7-day prep plan —
+        all tailored to your profile and target role.
+      </p>
+      <button class="secondary" id="interviewUnlockBtn" onclick="unlock('interview')">Get Interview Accelerator for £49</button>
     </div>
   </section>
 
@@ -497,7 +667,13 @@ button {
 
 <script>
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu9AT0Ou6I26jE9y4fQI01";
+const INTERVIEW_PAYMENT_LINK = "https://buy.stripe.com/4gMfZhbt8c2m5fAaC8fQI02";
 const STORAGE_KEY = "lla:lastReport";
+
+const PAYMENT_LINKS = {
+  audit: STRIPE_PAYMENT_LINK,
+  interview: INTERVIEW_PAYMENT_LINK,
+};
 
 function showError(message) {
   const el = document.getElementById("error");
@@ -598,17 +774,22 @@ async function generate() {
   }
 }
 
-function unlock() {
+function unlock(product) {
   const stored = loadReport();
   if (!stored || !stored.sessionId) {
     alert("Your session has expired. Please regenerate the free report first.");
     return;
   }
 
-  const url = new URL(STRIPE_PAYMENT_LINK);
-  url.searchParams.set("client_reference_id", stored.sessionId);
+  const link = PAYMENT_LINKS[product];
+  if (!link) return;
+
+  const url = new URL(link);
+  // The webhook splits this on `:` to know which product was bought.
+  const ref = product === "interview" ? `${stored.sessionId}:interview` : stored.sessionId;
+  url.searchParams.set("client_reference_id", ref);
   // Hint Stripe to come back to our site after payment with the unlock flag set.
-  url.searchParams.set("success_url", `${window.location.origin}/?unlock=1`);
+  url.searchParams.set("success_url", `${window.location.origin}/?unlock=${product}`);
   window.location.href = url.toString();
 }
 
@@ -694,8 +875,90 @@ function renderPremium(report) {
   `;
 }
 
-function setUnlockingState(message) {
-  const paywall = document.getElementById("paywall");
+function renderInterview(report) {
+  const likely = Array.isArray(report.likelyQuestions) ? report.likelyQuestions : [];
+  const likelyHtml = likely
+    .map(
+      (q) => `<div class="q-item">
+        <div class="label">${escapeHtml(q.category || "")}</div>
+        <p class="question">${escapeHtml(q.question || "")}</p>
+        <p class="approach">${escapeHtml(q.approach || "")}</p>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard("card-likely-questions", `<div class="q-list">${likelyHtml}</div>`);
+
+  const stars = Array.isArray(report.starAnswers) ? report.starAnswers : [];
+  const starsHtml = stars
+    .map(
+      (a) => `<div class="star-item">
+        <div class="label">Behavioural prompt</div>
+        <p class="question">${escapeHtml(a.question || "")}</p>
+        <div class="star-block"><p class="star-label">Situation</p><p>${escapeHtml(a.situation || "")}</p></div>
+        <div class="star-block"><p class="star-label">Task</p><p>${escapeHtml(a.task || "")}</p></div>
+        <div class="star-block"><p class="star-label">Action</p><p>${escapeHtml(a.action || "")}</p></div>
+        <div class="star-block"><p class="star-label">Result</p><p>${escapeHtml(a.result || "")}</p></div>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard("card-star-answers", starsHtml);
+
+  const smart = Array.isArray(report.smartQuestions) ? report.smartQuestions : [];
+  const smartHtml = smart
+    .map(
+      (s) => `<div class="smart-item">
+        <p class="question">${escapeHtml(s.question || "")}</p>
+        <p class="why">${escapeHtml(s.why || "")}</p>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard("card-smart-questions", smartHtml);
+
+  const salary = report.salaryPlaybook || {};
+  const salaryScripts = Array.isArray(salary.scripts) ? salary.scripts : [];
+  const salaryScriptsHtml = salaryScripts
+    .map(
+      (s) => `<div class="salary-script">
+        <div class="label">Scenario</div>
+        <p class="scenario">${escapeHtml(s.scenario || "")}</p>
+        <p class="script-body">${escapeHtml(s.script || "")}</p>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard(
+    "card-salary",
+    `<p class="salary-rationale">${escapeHtml(salary.anchorRangeRationale || "")}</p>${salaryScriptsHtml}`,
+  );
+
+  const prep = Array.isArray(report.prepPlan) ? report.prepPlan : [];
+  const prepHtml = prep
+    .map((d) => {
+      const tasks = Array.isArray(d.tasks) ? d.tasks : [];
+      const tasksHtml = tasks.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+      return `<div class="prep-day">
+        <div class="label">${escapeHtml(d.day || "")}</div>
+        <p class="focus">${escapeHtml(d.focus || "")}</p>
+        <ul>${tasksHtml}</ul>
+      </div>`;
+    })
+    .join("");
+  fillUnlockedCard("card-prep-plan", prepHtml);
+
+  const paywall = document.getElementById("interviewPaywall");
+  if (paywall) {
+    paywall.innerHTML = `
+      <h2>Your Interview Accelerator is unlocked</h2>
+      <p class="sub" style="margin: 8px auto 22px;">
+        Rehearse the STAR answers aloud and run through the 7-day plan.
+      </p>
+    `;
+  }
+}
+
+function setUnlockingState(message, target) {
+  const id = target === "interview" ? "interviewPaywall" : "paywall";
+  const paywall = document.getElementById(id);
+  if (!paywall) return;
   paywall.innerHTML = `
     <h2><span class="spinner"></span>${escapeHtml(message)}</h2>
     <p class="sub" style="margin: 8px auto 22px;">
@@ -704,8 +967,10 @@ function setUnlockingState(message) {
   `;
 }
 
-async function pollUnlock(sessionId) {
-  setUnlockingState("Confirming your payment…");
+async function pollUnlock(sessionId, product) {
+  product = product === "interview" ? "interview" : "audit";
+  const paywallId = product === "interview" ? "interviewPaywall" : "paywall";
+  setUnlockingState("Confirming your payment…", product);
 
   const deadline = Date.now() + 1000 * 60 * 3; // 3 minutes
   let delay = 1500;
@@ -715,27 +980,33 @@ async function pollUnlock(sessionId) {
       const res = await fetch("/api/unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, product }),
       });
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.status === "ready" && data.report) {
-        renderPremium(data.report);
+        if (product === "interview") {
+          renderInterview(data.report);
+        } else {
+          renderPremium(data.report);
+        }
         return;
       }
 
       if (res.status === 402) {
-        setUnlockingState("Waiting for Stripe to confirm payment…");
+        setUnlockingState("Waiting for Stripe to confirm payment…", product);
       } else if (!res.ok) {
-        const paywall = document.getElementById("paywall");
-        paywall.innerHTML = `
-          <h2>We couldn't unlock your report.</h2>
-          <p class="sub" style="margin: 8px auto 22px;">
-            ${escapeHtml(data.error || "Please refresh in a moment, or contact support if the issue persists.")}
-          </p>
-          <button class="secondary" onclick="location.reload()">Retry</button>
-          <button class="ghost" onclick="reset()">Start Again</button>
-        `;
+        const paywall = document.getElementById(paywallId);
+        if (paywall) {
+          paywall.innerHTML = `
+            <h2>We couldn't unlock your report.</h2>
+            <p class="sub" style="margin: 8px auto 22px;">
+              ${escapeHtml(data.error || "Please refresh in a moment, or contact support if the issue persists.")}
+            </p>
+            <button class="secondary" onclick="location.reload()">Retry</button>
+            <button class="ghost" onclick="reset()">Start Again</button>
+          `;
+        }
         return;
       }
     } catch {
@@ -745,15 +1016,17 @@ async function pollUnlock(sessionId) {
     delay = Math.min(delay * 1.4, 6000);
   }
 
-  const paywall = document.getElementById("paywall");
-  paywall.innerHTML = `
-    <h2>Still waiting on Stripe…</h2>
-    <p class="sub" style="margin: 8px auto 22px;">
-      If you completed payment, click below to retry. Otherwise the unlock will resume the next time you load this page.
-    </p>
-    <button class="secondary" onclick="location.reload()">Retry</button>
-    <button class="ghost" onclick="reset()">Start Again</button>
-  `;
+  const paywall = document.getElementById(paywallId);
+  if (paywall) {
+    paywall.innerHTML = `
+      <h2>Still waiting on Stripe…</h2>
+      <p class="sub" style="margin: 8px auto 22px;">
+        If you completed payment, click below to retry. Otherwise the unlock will resume the next time you load this page.
+      </p>
+      <button class="secondary" onclick="location.reload()">Retry</button>
+      <button class="ghost" onclick="reset()">Start Again</button>
+    `;
+  }
 }
 
 function reset() {
@@ -769,16 +1042,47 @@ function reset() {
   window.scrollTo(0, 0);
 }
 
-// On load: if the user is returning from Stripe (?unlock=1) and we have a stored
+// On load: if the user is returning from Stripe (?unlock=audit|interview|1) and we have a stored
 // session, restore the report screen and start polling for the premium content.
+// Also opportunistically re-check both products in case the user already paid for them.
 (function init() {
   const params = new URLSearchParams(window.location.search);
-  const returningFromStripe = params.has("unlock");
+  const unlockParam = params.get("unlock");
   const stored = loadReport();
-  if (returningFromStripe && stored && stored.sessionId) {
+  if (!stored || !stored.sessionId) return;
+
+  if (unlockParam) {
     renderFreeReport(stored);
-    pollUnlock(stored.sessionId);
+    const product = unlockParam === "interview" ? "interview" : "audit";
+    pollUnlock(stored.sessionId, product);
+    return;
   }
+
+  // No explicit unlock query — but if a previous unlock has already been confirmed
+  // (e.g. user revisits the page later), surface it silently.
+  (async () => {
+    let restoredScreen = false;
+    for (const product of ["audit", "interview"]) {
+      try {
+        const res = await fetch("/api/unlock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: stored.sessionId, product }),
+        });
+        if (!res.ok) continue;
+        const data = await res.json().catch(() => ({}));
+        if (data.status !== "ready" || !data.report) continue;
+        if (!restoredScreen) {
+          renderFreeReport(stored);
+          restoredScreen = true;
+        }
+        if (product === "interview") renderInterview(data.report);
+        else renderPremium(data.report);
+      } catch {
+        // ignore — best-effort restore.
+      }
+    }
+  })();
 })();
 </script>
 
