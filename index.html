@@ -663,8 +663,8 @@ button {
     </div>
 
     <div class="section-heading">
-      <h2>Career Toolkit</h2>
-      <p class="muted">The complete career-change package — a recruiter-grade CV rewrite, a 90-day roadmap, skills gap plan, networking playbook, and personal brand story.</p>
+      <h2>Career Reinvention VIP</h2>
+      <p class="muted">The premium career-change package — a recruiter-grade CV rewrite, a 90-day roadmap, skills gap plan, networking playbook, and personal brand story.</p>
     </div>
 
     <div class="cards">
@@ -720,13 +720,13 @@ button {
     </div>
 
     <div class="paywall" id="careerPaywall">
-      <h2 id="careerPaywallHeading">Get the Career Toolkit</h2>
+      <h2 id="careerPaywallHeading">Get Career Reinvention VIP</h2>
       <p id="careerPaywallSub" class="sub" style="margin: 8px auto 22px;">
-        The complete career-change package — recruiter-grade CV rewrite,
+        The premium career-change package — recruiter-grade CV rewrite,
         90-day roadmap, skills gap plan, networking playbook, and personal
         brand story, all tailored to the profile and target role.
       </p>
-      <button class="secondary" id="careerUnlockBtn" onclick="unlock('career')">Get Career Toolkit for £99</button>
+      <button class="secondary" id="careerUnlockBtn" onclick="unlock('career')">Get Career Reinvention VIP for £500</button>
     </div>
 
     <div class="section-heading">
@@ -802,7 +802,7 @@ button {
 <script>
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu9AT0Ou6I26jE9y4fQI01";
 const INTERVIEW_PAYMENT_LINK = "https://buy.stripe.com/4gMfZhbt8c2m5fAaC8fQI02";
-const CAREER_PAYMENT_LINK = "https://buy.stripe.com/6oUcN58gWgiCbDYeSofQI03";
+const CAREER_PAYMENT_LINK = "https://buy.stripe.com/dRmfZhcxceaufUefWsfQI05";
 const EXECUTIVE_PAYMENT_LINK = "https://buy.stripe.com/fZu3cv7cSd6qfUe7pWfQI04";
 const STORAGE_KEY = "lla:lastReport";
 
@@ -1190,7 +1190,7 @@ function renderCareer(report) {
   const paywall = document.getElementById("careerPaywall");
   if (paywall) {
     paywall.innerHTML = `
-      <h2>Your Career Toolkit is unlocked</h2>
+      <h2>Your Career Reinvention VIP is unlocked</h2>
       <p class="sub" style="margin: 8px auto 22px;">
         Save the CV rewrite, work the 90-day roadmap, and use the brand story everywhere.
       </p>
