@@ -4,7 +4,7 @@ import { getStore } from '@netlify/blobs'
 
 const anthropic = new Anthropic()
 
-type Product = 'audit' | 'interview' | 'career'
+type Product = 'audit' | 'interview' | 'career' | 'executive'
 
 type UnlockRequest = {
   sessionId?: unknown
@@ -153,6 +153,66 @@ type CareerReport = {
     whyThisRole: string
     signatureStory: string
   }
+}
+
+type KeynoteTopic = {
+  topic: string
+  angle: string
+  targetVenue: string
+}
+
+type ThoughtLeadership = {
+  signaturePov: {
+    thesis: string
+    supportingArgument: string
+  }
+  keynoteTopics: KeynoteTopic[]
+  publicationTargets: string[]
+}
+
+type ExecutiveBio = {
+  shortBio: string
+  conferenceBio: string
+  fullBio: string
+}
+
+type LinkedinExperienceBullet = {
+  title: string
+  company: string
+  bullets: string[]
+}
+
+type LinkedinOverhaul = {
+  headline: string
+  aboutSection: string
+  featuredSectionStrategy: string[]
+  experienceBullets: LinkedinExperienceBullet[]
+}
+
+type PresencePillar = {
+  pillar: string
+  currentAssessment: string
+  actionPlan: string
+}
+
+type ExecutivePresence = {
+  pillars: PresencePillar[]
+  boardMeetingGuidance: string
+  interviewPresenceTips: string
+}
+
+type StakeholderScript = {
+  scenario: string
+  context: string
+  script: string
+}
+
+type ExecutiveReport = {
+  thoughtLeadership: ThoughtLeadership
+  executiveBio: ExecutiveBio
+  linkedinOverhaul: LinkedinOverhaul
+  executivePresence: ExecutivePresence
+  stakeholderScripts: StakeholderScript[]
 }
 
 const AUDIT_SYSTEM_PROMPT = `You are an elite LinkedIn career strategist and recruiter (15+ years placing senior candidates at top firms). You write the deliverables a candidate would receive after paying for a one-on-one engagement.
@@ -320,6 +380,95 @@ Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no e
     "signatureStory": string          // The single memorable story the candidate tells in interviews and at events, written in first person. 5-7 sentences. Drawn from a specific moment in the profile, with a clear lesson and a clear outcome.
   }
 }`
+
+const EXECUTIVE_SYSTEM_PROMPT = `You are an elite executive brand strategist and leadership coach (15+ years advising C-suite executives, board members, and senior leaders on personal branding, thought leadership, and executive presence). You write the premium executive-branding package a senior candidate would receive after paying for a bespoke multi-week engagement.
+
+You are given:
+1. The candidate's pasted LinkedIn profile (verbatim).
+2. Their target role and optional target industry.
+3. The free-tier audit (score, headline rewrite, strengths, improvements).
+
+Your job is to produce five executive-branding deliverables, all grounded strictly in evidence from the candidate's profile. NEVER invent employers, titles, dates, metrics, or credentials that are not in the source. If the profile is thin in a given area, write that section cautiously and tell the candidate where to fill the gap.
+
+Voice: authoritative, polished, executive-grade British English. Direct and confident without being pompous. No buzzword soup, no clichés, no emoji. Written for a senior professional who commands rooms, not someone starting out.
+
+Calibrate every deliverable to the target role and the candidate's seniority. The output should feel like a significant step up from the Career Toolkit — this is premium executive positioning.
+
+Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no extra keys, matching this TypeScript type:
+
+{
+  "thoughtLeadership": {
+    "signaturePov": {
+      "thesis": string,
+      "supportingArgument": string
+    },
+    "keynoteTopics": [
+      {
+        "topic": string,
+        "angle": string,
+        "targetVenue": string
+      }
+    ],
+    "publicationTargets": string[]
+  },
+  "executiveBio": {
+    "shortBio": string,
+    "conferenceBio": string,
+    "fullBio": string
+  },
+  "linkedinOverhaul": {
+    "headline": string,
+    "aboutSection": string,
+    "featuredSectionStrategy": string[],
+    "experienceBullets": [
+      {
+        "title": string,
+        "company": string,
+        "bullets": string[]
+      }
+    ]
+  },
+  "executivePresence": {
+    "pillars": [
+      {
+        "pillar": string,
+        "currentAssessment": string,
+        "actionPlan": string
+      }
+    ],
+    "boardMeetingGuidance": string,
+    "interviewPresenceTips": string
+  },
+  "stakeholderScripts": [
+    {
+      "scenario": string,
+      "context": string,
+      "script": string
+    }
+  ]
+}
+
+Field-level instructions:
+
+thoughtLeadership.signaturePov.thesis: ONE bold thesis statement (max 40 words) that defines the candidate's unique perspective in their domain. Should be provocative enough to spark discussion but grounded in their actual experience.
+thoughtLeadership.signaturePov.supportingArgument: 4-6 sentences. The evidence-based argument for why this candidate is uniquely positioned to hold this view, drawing on their career trajectory, results, and expertise from the profile.
+thoughtLeadership.keynoteTopics: Exactly 3 keynote/speaking topics the candidate could own. Each topic under 80 chars, specific and compelling. Each angle is 3-4 sentences on what the talk argues and why an audience of peers would care. targetVenue names the type of event this talk suits.
+thoughtLeadership.publicationTargets: Exactly 5 publications, newsletters, or platforms where the candidate should publish or be featured, specific to their industry and seniority. Each entry is the publication name plus a 1-sentence rationale.
+
+executiveBio.shortBio: Exactly 50 words. The bio used for panel introductions and speaker cards. Third person, authoritative, names the outcome they create.
+executiveBio.conferenceBio: 140-160 words. The bio used in conference programmes and event marketing. Third person, anchored to specific achievements from the profile.
+executiveBio.fullBio: 280-350 words. The narrative biography for executive profiles, media kits, and board packs. Third person, tells the career story with a clear arc, weaving in the biggest outcomes and the strategic thread that connects them.
+
+linkedinOverhaul.headline: Max 220 chars. Executive-level LinkedIn headline that signals seniority, domain, and outcome — not a job title.
+linkedinOverhaul.aboutSection: 1800-2400 chars. A complete executive-level About section. First person. Opens with the strategic outcome they create. Weaves in 2-3 signature achievements. Includes a clear call-to-action for boards, investors, or hiring committees. Embeds 8-12 executive-level keywords.
+linkedinOverhaul.featuredSectionStrategy: Exactly 4 items the candidate should pin in their Featured section, each described in one sentence.
+linkedinOverhaul.experienceBullets: One entry per role visible in the profile, most recent first. 3-5 bullets per role leading with strategic impact (revenue, growth, transformation), naming the scale (team size, budget), and quantifying wherever the profile supports it. Executive voice — no "responsible for".
+
+executivePresence.pillars: Exactly 3 pillars of executive presence, personalised to this candidate. Each pillar has a name, a 2-3 sentence honest assessment, and a 3-4 sentence actionable plan for the next 90 days.
+executivePresence.boardMeetingGuidance: 4-6 sentences. Specific guidance for how this candidate should conduct themselves in board meetings or executive committee sessions.
+executivePresence.interviewPresenceTips: 4-6 sentences. How to project executive presence in C-suite or board-level interviews.
+
+stakeholderScripts: Exactly 5 scripts. Scenarios: "Board update / executive summary", "Investor or stakeholder pitch", "Team rallying during transformation", "Crisis communication to senior stakeholders", "Executive networking introduction". Each context is 1-2 sentences on when to use it. Each script is 5-8 sentences, first person, ready to deliver.`
 
 function clampString(value: unknown, max = 64): string {
   if (typeof value !== 'string') return ''
@@ -545,6 +694,88 @@ function coerceCareer(value: unknown): CareerReport {
   }
 }
 
+function coerceExecutive(value: unknown): ExecutiveReport {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Executive response was not an object')
+  }
+  const v = value as Record<string, unknown>
+
+  const tlRaw = (v.thoughtLeadership ?? {}) as Record<string, unknown>
+  const povRaw = (tlRaw.signaturePov ?? {}) as Record<string, unknown>
+  const keynoteRaw = Array.isArray(tlRaw.keynoteTopics) ? tlRaw.keynoteTopics : []
+  const thoughtLeadership: ThoughtLeadership = {
+    signaturePov: {
+      thesis: asString(povRaw.thesis),
+      supportingArgument: asString(povRaw.supportingArgument),
+    },
+    keynoteTopics: keynoteRaw.map((k) => {
+      const r = (k ?? {}) as Record<string, unknown>
+      return { topic: asString(r.topic), angle: asString(r.angle), targetVenue: asString(r.targetVenue) }
+    }),
+    publicationTargets: Array.isArray(tlRaw.publicationTargets)
+      ? tlRaw.publicationTargets.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : [],
+  }
+
+  const bioRaw = (v.executiveBio ?? {}) as Record<string, unknown>
+  const executiveBio: ExecutiveBio = {
+    shortBio: asString(bioRaw.shortBio),
+    conferenceBio: asString(bioRaw.conferenceBio),
+    fullBio: asString(bioRaw.fullBio),
+  }
+
+  const overhaulRaw = (v.linkedinOverhaul ?? {}) as Record<string, unknown>
+  const expBulletsRaw = Array.isArray(overhaulRaw.experienceBullets) ? overhaulRaw.experienceBullets : []
+  const linkedinOverhaul: LinkedinOverhaul = {
+    headline: asString(overhaulRaw.headline),
+    aboutSection: asString(overhaulRaw.aboutSection),
+    featuredSectionStrategy: Array.isArray(overhaulRaw.featuredSectionStrategy)
+      ? overhaulRaw.featuredSectionStrategy.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : [],
+    experienceBullets: expBulletsRaw.map((e) => {
+      const r = (e ?? {}) as Record<string, unknown>
+      const bullets = Array.isArray(r.bullets)
+        ? r.bullets.filter((b): b is string => typeof b === 'string').map((b) => b.trim()).filter(Boolean)
+        : []
+      return { title: asString(r.title), company: asString(r.company), bullets }
+    }),
+  }
+
+  const presenceRaw = (v.executivePresence ?? {}) as Record<string, unknown>
+  const pillarsRaw = Array.isArray(presenceRaw.pillars) ? presenceRaw.pillars : []
+  const executivePresence: ExecutivePresence = {
+    pillars: pillarsRaw.map((p) => {
+      const r = (p ?? {}) as Record<string, unknown>
+      return {
+        pillar: asString(r.pillar),
+        currentAssessment: asString(r.currentAssessment),
+        actionPlan: asString(r.actionPlan),
+      }
+    }),
+    boardMeetingGuidance: asString(presenceRaw.boardMeetingGuidance),
+    interviewPresenceTips: asString(presenceRaw.interviewPresenceTips),
+  }
+
+  const scriptsRaw = Array.isArray(v.stakeholderScripts) ? v.stakeholderScripts : []
+  const stakeholderScripts: StakeholderScript[] = scriptsRaw.map((s) => {
+    const r = (s ?? {}) as Record<string, unknown>
+    return { scenario: asString(r.scenario), context: asString(r.context), script: asString(r.script) }
+  })
+
+  if (
+    !thoughtLeadership.signaturePov.thesis ||
+    thoughtLeadership.keynoteTopics.length === 0 ||
+    !executiveBio.shortBio ||
+    !linkedinOverhaul.headline ||
+    executivePresence.pillars.length === 0 ||
+    stakeholderScripts.length === 0
+  ) {
+    throw new Error('Executive response missing required fields')
+  }
+
+  return { thoughtLeadership, executiveBio, linkedinOverhaul, executivePresence, stakeholderScripts }
+}
+
 function storesFor(product: Product) {
   if (product === 'interview') {
     return {
@@ -556,6 +787,12 @@ function storesFor(product: Product) {
     return {
       paid: getStore({ name: 'paid-career-sessions', consistency: 'strong' }),
       reports: getStore({ name: 'career-reports', consistency: 'strong' }),
+    }
+  }
+  if (product === 'executive') {
+    return {
+      paid: getStore({ name: 'paid-executive-sessions', consistency: 'strong' }),
+      reports: getStore({ name: 'executive-reports', consistency: 'strong' }),
     }
   }
   return {
@@ -582,7 +819,7 @@ export default async (req: Request, _context: Context) => {
   }
 
   const product: Product =
-    body.product === 'interview' ? 'interview' : body.product === 'career' ? 'career' : 'audit'
+    body.product === 'interview' ? 'interview' : body.product === 'career' ? 'career' : body.product === 'executive' ? 'executive' : 'audit'
 
   const sessions = getStore({ name: 'sessions', consistency: 'strong' })
   const { paid, reports } = storesFor(product)
@@ -608,7 +845,9 @@ export default async (req: Request, _context: Context) => {
       ? 'Produce the interview-prep deliverables now. Return only the JSON object specified in the system prompt.'
       : product === 'career'
         ? 'Produce the career-toolkit deliverables now. Return only the JSON object specified in the system prompt.'
-        : 'Produce the premium deliverables now. Return only the JSON object specified in the system prompt.'
+        : product === 'executive'
+          ? 'Produce the executive-branding deliverables now. Return only the JSON object specified in the system prompt.'
+          : 'Produce the premium deliverables now. Return only the JSON object specified in the system prompt.'
 
   const userPrompt = [
     `Target role: ${session.role}`,
@@ -630,8 +869,10 @@ export default async (req: Request, _context: Context) => {
       ? INTERVIEW_SYSTEM_PROMPT
       : product === 'career'
         ? CAREER_SYSTEM_PROMPT
-        : AUDIT_SYSTEM_PROMPT
-  const maxTokens = product === 'interview' ? 7000 : product === 'career' ? 8000 : 6000
+        : product === 'executive'
+          ? EXECUTIVE_SYSTEM_PROMPT
+          : AUDIT_SYSTEM_PROMPT
+  const maxTokens = product === 'interview' ? 7000 : product === 'career' ? 8000 : product === 'executive' ? 9000 : 6000
 
   let message
   try {
@@ -651,7 +892,7 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Model returned no text' }, { status: 502 })
   }
 
-  let report: AuditReport | InterviewReport | CareerReport
+  let report: AuditReport | InterviewReport | CareerReport | ExecutiveReport
   try {
     const parsed = extractJson(textBlock.text)
     report =
@@ -659,7 +900,9 @@ export default async (req: Request, _context: Context) => {
         ? coerceInterview(parsed)
         : product === 'career'
           ? coerceCareer(parsed)
-          : coerceAudit(parsed)
+          : product === 'executive'
+            ? coerceExecutive(parsed)
+            : coerceAudit(parsed)
   } catch (err) {
     const detail = err instanceof Error ? err.message : 'Unknown error'
     return Response.json({ error: `Could not parse model response: ${detail}` }, { status: 502 })

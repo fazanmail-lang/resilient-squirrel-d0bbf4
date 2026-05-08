@@ -728,6 +728,73 @@ button {
       </p>
       <button class="secondary" id="careerUnlockBtn" onclick="unlock('career')">Get Career Toolkit for £99</button>
     </div>
+
+    <div class="section-heading">
+      <h2>Executive Brand</h2>
+      <p class="muted">The full executive-branding package — a thought-leadership strategy, executive bio, board-ready LinkedIn overhaul, executive presence playbook, and stakeholder communication scripts.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card" id="card-thought-leadership">
+        <h3>Thought Leadership Strategy</h3>
+        <p class="blur">
+          A 90-day content strategy positioning the candidate as an authority
+          in their domain — keynote topics, publication targets, speaking
+          opportunities, and a signature point of view.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-executive-bio">
+        <h3>Executive Bio</h3>
+        <p class="blur">
+          Three versions of a board-ready biography — a 50-word intro for
+          panels, a 150-word bio for conference programmes, and a full
+          narrative bio for executive profiles and media kits.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-linkedin-overhaul">
+        <h3>LinkedIn Overhaul</h3>
+        <p class="blur">
+          A complete executive-level LinkedIn rewrite — headline, About
+          section, featured section strategy, and experience bullets
+          reframed around strategic impact and P&amp;L outcomes.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-executive-presence">
+        <h3>Executive Presence Playbook</h3>
+        <p class="blur">
+          A personalised playbook covering gravitas, communication style,
+          and appearance — with specific coaching on how this candidate
+          can elevate their presence in board meetings, interviews, and keynotes.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+
+      <div class="card" id="card-stakeholder-scripts">
+        <h3>Stakeholder Communication Scripts</h3>
+        <p class="blur">
+          Five ready-to-use scripts for high-stakes executive scenarios —
+          board updates, investor pitches, team rallying, crisis
+          communication, and executive networking introductions.
+        </p>
+        <div class="lock">🔒 Locked</div>
+      </div>
+    </div>
+
+    <div class="paywall" id="executivePaywall">
+      <h2 id="executivePaywallHeading">Get the Executive Brand</h2>
+      <p id="executivePaywallSub" class="sub" style="margin: 8px auto 22px;">
+        The premium executive-branding package — thought leadership strategy,
+        executive bio, LinkedIn overhaul, executive presence playbook, and
+        stakeholder communication scripts, all tailored to your profile.
+      </p>
+      <button class="secondary" id="executiveUnlockBtn" onclick="unlock('executive')">Get Executive Brand for £199</button>
+    </div>
   </section>
 
 </div>
@@ -736,12 +803,14 @@ button {
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu9AT0Ou6I26jE9y4fQI01";
 const INTERVIEW_PAYMENT_LINK = "https://buy.stripe.com/4gMfZhbt8c2m5fAaC8fQI02";
 const CAREER_PAYMENT_LINK = "https://buy.stripe.com/6oUcN58gWgiCbDYeSofQI03";
+const EXECUTIVE_PAYMENT_LINK = "https://buy.stripe.com/fZu3cv7cSd6qfUe7pWfQI04";
 const STORAGE_KEY = "lla:lastReport";
 
 const PAYMENT_LINKS = {
   audit: STRIPE_PAYMENT_LINK,
   interview: INTERVIEW_PAYMENT_LINK,
   career: CAREER_PAYMENT_LINK,
+  executive: EXECUTIVE_PAYMENT_LINK,
 };
 
 function showError(message) {
@@ -1129,13 +1198,112 @@ function renderCareer(report) {
   }
 }
 
+function renderExecutive(report) {
+  const tl = report.thoughtLeadership || {};
+  const pov = tl.signaturePov || {};
+  const topicsHtml = (Array.isArray(tl.keynoteTopics) ? tl.keynoteTopics : [])
+    .map(
+      (t) => `<div class="smart-item">
+        <p class="question">${escapeHtml(t.topic || "")}</p>
+        <p class="approach">${escapeHtml(t.angle || "")}</p>
+        <p style="color:#9ca3af;font-size:13.5px;margin-top:4px;">Target: ${escapeHtml(t.targetVenue || "")}</p>
+      </div>`,
+    )
+    .join("");
+  const pubsHtml = (Array.isArray(tl.publicationTargets) ? tl.publicationTargets : [])
+    .map((p) => `<li>${escapeHtml(p)}</li>`)
+    .join("");
+  fillUnlockedCard(
+    "card-thought-leadership",
+    `<div class="positioning">
+      <p class="statement">${escapeHtml(pov.thesis || "")}</p>
+      <p class="rationale">${escapeHtml(pov.supportingArgument || "")}</p>
+    </div>
+    ${topicsHtml}
+    ${pubsHtml ? `<div class="star-block"><p class="star-label">Publication targets</p><ul style="margin:0;padding-left:20px;color:#d1d5db;line-height:1.65;font-size:14.5px;">${pubsHtml}</ul></div>` : ""}`,
+  );
+
+  const bio = report.executiveBio || {};
+  fillUnlockedCard(
+    "card-executive-bio",
+    `<div class="star-block"><p class="star-label">Short bio (50 words)</p><p>${escapeHtml(bio.shortBio || "")}</p></div>
+     <div class="star-block"><p class="star-label">Conference bio (150 words)</p><p>${escapeHtml(bio.conferenceBio || "")}</p></div>
+     <div class="star-block"><p class="star-label">Full narrative bio</p><p>${escapeHtml(bio.fullBio || "")}</p></div>`,
+  );
+
+  const overhaul = report.linkedinOverhaul || {};
+  const expHtml = (Array.isArray(overhaul.experienceBullets) ? overhaul.experienceBullets : [])
+    .map(
+      (e) => {
+        const bullets = Array.isArray(e.bullets) ? e.bullets : [];
+        const bHtml = bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("");
+        return `<div class="star-block">
+          <p class="star-label">${escapeHtml(e.title || "")} — ${escapeHtml(e.company || "")}</p>
+          <ul style="margin:0;padding-left:20px;color:#d1d5db;line-height:1.65;font-size:14.5px;">${bHtml}</ul>
+        </div>`;
+      },
+    )
+    .join("");
+  const featuredHtml = (Array.isArray(overhaul.featuredSectionStrategy) ? overhaul.featuredSectionStrategy : [])
+    .map((f) => `<li>${escapeHtml(f)}</li>`)
+    .join("");
+  fillUnlockedCard(
+    "card-linkedin-overhaul",
+    `<div class="star-block"><p class="star-label">Headline</p><p>${escapeHtml(overhaul.headline || "")}</p></div>
+     <div class="star-block"><p class="star-label">About section</p><pre class="about">${escapeHtml(overhaul.aboutSection || "")}</pre></div>
+     ${featuredHtml ? `<div class="star-block"><p class="star-label">Featured section strategy</p><ul style="margin:0;padding-left:20px;color:#d1d5db;line-height:1.65;font-size:14.5px;">${featuredHtml}</ul></div>` : ""}
+     ${expHtml}`,
+  );
+
+  const presence = report.executivePresence || {};
+  const pillarsHtml = (Array.isArray(presence.pillars) ? presence.pillars : [])
+    .map(
+      (p) => `<div class="smart-item">
+        <p class="question">${escapeHtml(p.pillar || "")}</p>
+        <div class="star-block"><p class="star-label">Assessment</p><p>${escapeHtml(p.currentAssessment || "")}</p></div>
+        <div class="star-block"><p class="star-label">Action plan</p><p>${escapeHtml(p.actionPlan || "")}</p></div>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard(
+    "card-executive-presence",
+    `${pillarsHtml}
+     <div class="star-block"><p class="star-label">Board meeting guidance</p><p>${escapeHtml(presence.boardMeetingGuidance || "")}</p></div>
+     <div class="star-block"><p class="star-label">Interview presence tips</p><p>${escapeHtml(presence.interviewPresenceTips || "")}</p></div>`,
+  );
+
+  const scripts = Array.isArray(report.stakeholderScripts) ? report.stakeholderScripts : [];
+  const scriptsHtml = scripts
+    .map(
+      (s) => `<div class="script">
+        <div class="label">${escapeHtml(s.scenario || "")}</div>
+        <p class="subj">${escapeHtml(s.context || "")}</p>
+        <p class="body">${escapeHtml(s.script || "")}</p>
+      </div>`,
+    )
+    .join("");
+  fillUnlockedCard("card-stakeholder-scripts", `<div class="scripts">${scriptsHtml}</div>`);
+
+  const paywall = document.getElementById("executivePaywall");
+  if (paywall) {
+    paywall.innerHTML = `
+      <h2>Your Executive Brand is unlocked</h2>
+      <p class="sub" style="margin: 8px auto 22px;">
+        Use the thought leadership strategy, executive bio, and stakeholder scripts to own your executive narrative.
+      </p>
+    `;
+  }
+}
+
 function setUnlockingState(message, target) {
   const id =
     target === "interview"
       ? "interviewPaywall"
       : target === "career"
         ? "careerPaywall"
-        : "paywall";
+        : target === "executive"
+          ? "executivePaywall"
+          : "paywall";
   const paywall = document.getElementById(id);
   if (!paywall) return;
   paywall.innerHTML = `
@@ -1147,13 +1315,15 @@ function setUnlockingState(message, target) {
 }
 
 async function pollUnlock(sessionId, product) {
-  if (product !== "interview" && product !== "career") product = "audit";
+  if (product !== "interview" && product !== "career" && product !== "executive") product = "audit";
   const paywallId =
     product === "interview"
       ? "interviewPaywall"
       : product === "career"
         ? "careerPaywall"
-        : "paywall";
+        : product === "executive"
+          ? "executivePaywall"
+          : "paywall";
   setUnlockingState("Confirming your payment…", product);
 
   const deadline = Date.now() + 1000 * 60 * 3; // 3 minutes
@@ -1173,6 +1343,8 @@ async function pollUnlock(sessionId, product) {
           renderInterview(data.report);
         } else if (product === "career") {
           renderCareer(data.report);
+        } else if (product === "executive") {
+          renderExecutive(data.report);
         } else {
           renderPremium(data.report);
         }
@@ -1244,7 +1416,9 @@ function reset() {
         ? "interview"
         : unlockParam === "career"
           ? "career"
-          : "audit";
+          : unlockParam === "executive"
+            ? "executive"
+            : "audit";
     pollUnlock(stored.sessionId, product);
     return;
   }
@@ -1253,7 +1427,7 @@ function reset() {
   // (e.g. user revisits the page later), surface it silently.
   (async () => {
     let restoredScreen = false;
-    for (const product of ["audit", "interview", "career"]) {
+    for (const product of ["audit", "interview", "career", "executive"]) {
       try {
         const res = await fetch("/api/unlock", {
           method: "POST",
@@ -1269,6 +1443,7 @@ function reset() {
         }
         if (product === "interview") renderInterview(data.report);
         else if (product === "career") renderCareer(data.report);
+        else if (product === "executive") renderExecutive(data.report);
         else renderPremium(data.report);
       } catch {
         // ignore — best-effort restore.
