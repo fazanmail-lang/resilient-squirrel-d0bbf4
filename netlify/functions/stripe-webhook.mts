@@ -50,16 +50,18 @@ export default async (req: Request, _context: Context) => {
     const ref = session.client_reference_id?.trim() ?? ''
     const paymentStatus = session.payment_status
 
-    // Format: `${sessionId}` (legacy/audit), `${sessionId}:interview`, or `${sessionId}:career`.
+    // Format: `${sessionId}` (legacy/audit), `${sessionId}:interview`, `${sessionId}:career`, or `${sessionId}:executive`.
     const [sessionId, productSuffix] = ref.split(':')
     const product =
-      productSuffix === 'interview' ? 'interview' : productSuffix === 'career' ? 'career' : 'audit'
+      productSuffix === 'interview' ? 'interview' : productSuffix === 'career' ? 'career' : productSuffix === 'executive' ? 'executive' : 'audit'
     const storeName =
       product === 'interview'
         ? 'paid-interview-sessions'
         : product === 'career'
           ? 'paid-career-sessions'
-          : 'paid-sessions'
+          : product === 'executive'
+            ? 'paid-executive-sessions'
+            : 'paid-sessions'
 
     if (sessionId && paymentStatus === 'paid') {
       try {
