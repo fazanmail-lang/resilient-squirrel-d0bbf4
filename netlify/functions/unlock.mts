@@ -12,17 +12,18 @@ type UnlockRequest = {
 }
 
 type StoredFreeResult = {
-  score: number
-  headline: string
-  postIdea: string
-  strengths: string[]
-  improvements: string[]
+  overallScore: number
+  insights: {
+    visibility: { score: number; teaser: string }
+    headline: { score: number; teaser: string }
+    recruiter: { score: number; teaser: string }
+  }
 }
 
 type StoredSession = {
-  profile: string
+  linkedinUrl: string
   role: string
-  industry: string
+  email: string
   free: StoredFreeResult
   createdAt: number
 }
@@ -218,20 +219,20 @@ type ExecutiveReport = {
 const AUDIT_SYSTEM_PROMPT = `You are an elite LinkedIn career strategist and recruiter (15+ years placing senior candidates at top firms). You write the deliverables a candidate would receive after paying for a one-on-one engagement.
 
 You are given:
-1. The candidate's pasted LinkedIn profile (verbatim).
-2. Their target role and optional target industry.
-3. The free-tier audit you previously produced (score, headline rewrite, strengths, improvements).
+1. The candidate's public LinkedIn profile URL (you CANNOT browse it).
+2. The role they are targeting.
+3. The free-tier preview audit (an overall profile score plus sub-scores and teasers for visibility, headline strength, and recruiter relevance).
 
-Your job is to produce four premium deliverables, all grounded strictly in evidence from the profile. NEVER invent employers, titles, dates, metrics, or credentials that are not present. If a category cannot be justified by the profile, write it cautiously rather than fabricating detail.
+You do NOT have the candidate's profile text, so you cannot cite specific employers, titles, dates, or metrics. Produce four premium deliverables calibrated to the target role and the typical trajectory of a strong candidate pursuing it. Where a deliverable needs a specific only the candidate can supply (a company, a metric, a date), insert a clearly marked placeholder such as [your company] or [add a metric] for them to complete — never invent it as fact.
 
 Voice: confident, specific, recruiter-grade British English. Direct, not flowery. No buzzword soup, no "passionate about", no "results-driven", no emoji except where explicitly requested in the content plan. First person where the deliverable is written for the candidate to use.
 
-Tailor everything to the target role. If the profile is sparse, say so honestly inside the deliverable while still doing the strategic work. Re-use the strengths and improvements you already identified — the premium output should feel like a logical continuation of the free audit, not a contradiction.
+Tailor everything to the target role. If a deliverable cannot be completed without a specific the candidate must supply, use a placeholder rather than fabricating it. Re-use the themes from the free preview audit — the premium output should feel like a logical continuation of it, not a contradiction.
 
 Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no extra keys, matching this TypeScript type:
 
 {
-  "aboutRewrite": string,             // A complete LinkedIn About section the candidate can paste in. 1800-2400 characters. First person. Opens with a hook line that names the outcome they create. Includes 2-4 short paragraphs separated by blank lines. Embeds 6-10 keywords a recruiter would search for the target role. Ends with a clear call-to-action (e.g. "If you're hiring for X, message me here or at..."). Use only experience, skills, and metrics that appear in the source profile.
+  "aboutRewrite": string,             // A complete LinkedIn About section the candidate can paste in. 1800-2400 characters. First person. Opens with a hook line that names the outcome they create. Includes 2-4 short paragraphs separated by blank lines. Embeds 6-10 keywords a recruiter would search for the target role. Ends with a clear call-to-action (e.g. "If you're hiring for X, message me here or at..."). Use placeholders such as [your company] or [add a metric] for specifics only the candidate can supply; do not fabricate them as fact.
   "outreachScripts": {
     "hiringManager": { "subject": string, "body": string },   // Cold message to a hiring manager at a target company. Subject under 60 chars. Body 80-130 words. References a plausible reason for reaching out (e.g. their team, their stack, a job post) without inventing facts about that company. Closes with a low-friction ask (15 min call, or 'reply yes/no').
     "recruiter": { "subject": string, "body": string },        // Cold message to an in-house or agency recruiter who works the target role/industry. Subject under 60 chars. Body 80-130 words. Lead with the candidate's strongest quantified outcome from the profile. Be explicit about the role(s) they're open to.
@@ -260,11 +261,11 @@ Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no e
 const INTERVIEW_SYSTEM_PROMPT = `You are an elite interview coach (15+ years preparing senior candidates for interviews at top firms). You write the prep dossier a candidate would receive after paying for an intensive one-on-one coaching engagement.
 
 You are given:
-1. The candidate's pasted LinkedIn profile (verbatim).
-2. Their target role and optional target industry.
-3. The free-tier audit (score, headline rewrite, strengths, improvements).
+1. The candidate's public LinkedIn profile URL (you CANNOT browse it).
+2. The role they are targeting.
+3. The free-tier preview audit (an overall profile score plus sub-scores and teasers for visibility, headline strength, and recruiter relevance).
 
-Your job is to produce five interview-prep deliverables, all grounded strictly in evidence from the candidate's profile. NEVER invent employers, titles, dates, metrics, or credentials that are not in the source. If the profile is thin in a given area, write that section cautiously and tell the candidate where to fill the gap.
+You do NOT have the candidate's profile text, so you cannot cite specific employers, titles, dates, or metrics. Produce five interview-prep deliverables calibrated to the target role and the typical trajectory of a strong candidate pursuing it. Where a deliverable needs a specific only the candidate can supply (an employer, a project, a metric), insert a clearly marked placeholder such as [your company] or [add a metric] for them to complete, and tell the candidate where to fill the gap — never invent it as fact.
 
 Voice: direct, specific, recruiter-grade British English. No filler ("essentially", "passionate about"), no clichés, no emoji. STAR answers and salary scripts are written in first person for the candidate to rehearse aloud.
 
@@ -316,11 +317,11 @@ Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no e
 const CAREER_SYSTEM_PROMPT = `You are an elite career strategist and executive coach (15+ years guiding senior candidates through career changes at top firms). You write the toolkit a candidate would receive after paying for an intensive multi-week engagement.
 
 You are given:
-1. The candidate's pasted LinkedIn profile (verbatim).
-2. Their target role and optional target industry.
-3. The free-tier audit (score, headline rewrite, strengths, improvements).
+1. The candidate's public LinkedIn profile URL (you CANNOT browse it).
+2. The role they are targeting.
+3. The free-tier preview audit (an overall profile score plus sub-scores and teasers for visibility, headline strength, and recruiter relevance).
 
-Your job is to produce five career-toolkit deliverables, all grounded strictly in evidence from the candidate's profile. NEVER invent employers, titles, dates, metrics, or credentials that are not in the source. If the profile is thin in a given area, write that section cautiously and tell the candidate where to fill the gap.
+You do NOT have the candidate's profile text, so you cannot cite specific employers, titles, dates, or metrics. Produce five career-toolkit deliverables calibrated to the target role and the typical trajectory of a strong candidate pursuing it. Where a deliverable needs a specific only the candidate can supply (an employer, a project, a metric), insert a clearly marked placeholder such as [your company] or [add a metric] for them to complete, and tell the candidate where to fill the gap — never invent it as fact.
 
 Voice: confident, specific, recruiter-grade British English. Direct, not flowery. No buzzword soup, no "passionate about", no "results-driven", no emoji. CV bullets and brand story are written in first person where appropriate for the candidate to use directly.
 
@@ -384,11 +385,11 @@ Respond with EXACTLY one JSON object, no surrounding prose, no code fences, no e
 const EXECUTIVE_SYSTEM_PROMPT = `You are an elite executive brand strategist and leadership coach (15+ years advising C-suite executives, board members, and senior leaders on personal branding, thought leadership, and executive presence). You write the premium executive-branding package a senior candidate would receive after paying for a bespoke multi-week engagement.
 
 You are given:
-1. The candidate's pasted LinkedIn profile (verbatim).
-2. Their target role and optional target industry.
-3. The free-tier audit (score, headline rewrite, strengths, improvements).
+1. The candidate's public LinkedIn profile URL (you CANNOT browse it).
+2. The role they are targeting.
+3. The free-tier preview audit (an overall profile score plus sub-scores and teasers for visibility, headline strength, and recruiter relevance).
 
-Your job is to produce five executive-branding deliverables, all grounded strictly in evidence from the candidate's profile. NEVER invent employers, titles, dates, metrics, or credentials that are not in the source. If the profile is thin in a given area, write that section cautiously and tell the candidate where to fill the gap.
+You do NOT have the candidate's profile text, so you cannot cite specific employers, titles, dates, or metrics. Produce five executive-branding deliverables calibrated to the target role and the typical trajectory of a senior leader pursuing it. Where a deliverable needs a specific only the candidate can supply (an employer, a board, a metric), insert a clearly marked placeholder such as [your company] or [add a metric] for them to complete, and tell the candidate where to fill the gap — never invent it as fact.
 
 Voice: authoritative, polished, executive-grade British English. Direct and confident without being pompous. No buzzword soup, no clichés, no emoji. Written for a senior professional who commands rooms, not someone starting out.
 
@@ -851,15 +852,10 @@ export default async (req: Request, _context: Context) => {
 
   const userPrompt = [
     `Target role: ${session.role}`,
-    session.industry ? `Target industry: ${session.industry}` : 'Target industry: (not specified)',
+    `Candidate's public LinkedIn profile URL: ${session.linkedinUrl}`,
     '',
-    'Free-tier audit produced for this candidate (already shown to them):',
+    'Free-tier preview audit produced for this candidate (already shown to them):',
     JSON.stringify(session.free, null, 2),
-    '',
-    'LinkedIn profile text (verbatim from the candidate):',
-    '"""',
-    session.profile,
-    '"""',
     '',
     finalInstruction,
   ].join('\n')
