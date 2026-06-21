@@ -4,37 +4,52 @@ import { getStore } from '@netlify/blobs'
 
 const anthropic = new Anthropic()
 
-const MAX_PROFILE_CHARS = 12_000
 const MAX_FIELD_CHARS = 200
+const MAX_URL_CHARS = 400
 
 type AnalyzeRequest = {
-  profile?: unknown
+  linkedinUrl?: unknown
   role?: unknown
-  industry?: unknown
+  email?: unknown
+}
+
+type Insight = {
+  score: number
+  teaser: string
 }
 
 type AnalyzeResult = {
-  score: number
-  headline: string
-  postIdea: string
-  strengths: string[]
-  improvements: string[]
+  overallScore: number
+  insights: {
+    visibility: Insight
+    headline: Insight
+    recruiter: Insight
+  }
 }
 
-const SYSTEM_PROMPT = `You are a senior LinkedIn profile strategist who helps candidates land interviews.
-You receive a candidate's pasted LinkedIn profile text, the role they want next, and optionally a target industry.
-You produce a brutally honest but constructive analysis grounded only in the text provided.
-Never invent experience, employers, metrics, or credentials that are not present in the input.
-If the profile is too thin to assess a category, say so plainly inside the relevant field.
+const SYSTEM_PROMPT = `You are a senior LinkedIn profile strategist. A candidate has requested a free, instant preview audit of their LinkedIn profile.
+
+You are given ONLY their public LinkedIn profile URL and the role they are targeting. You CANNOT browse the URL and you do NOT have their profile text, so you must NOT state specific facts about their actual profile (no employers, titles, metrics, or claims). Instead, produce a plausible, encouraging preview that reflects how recruiters typically read profiles for the target role, and that makes the candidate want to unlock the full report.
+
+Produce an overall profile score and three sub-scores, each with a one-line teaser:
+- visibility: how findable and searchable the profile is likely to be for recruiters hiring for the target role.
+- headline: how strong the headline positioning typically is, and what a sharper headline would do.
+- recruiter: how clearly the profile likely signals fit for the target role to a recruiter skimming it.
+
+Rules:
+- Keep every teaser to a single sentence (max ~140 chars), specific to the target role, framed around what recruiters look for and what the full report would fix. Never assert a specific fact about the candidate's real profile.
+- Keep all scores believable and in the 52-78 range so there is honest, motivating room to improve.
+- The overall score should be roughly the average of the three sub-scores.
 
 Respond with a single JSON object matching exactly this TypeScript type, with no surrounding prose, no code fences, and no extra keys:
 
 {
-  "score": number,            // 0-100 recruiter-fit score for the target role, calibrated honestly
-  "headline": string,         // a rewritten LinkedIn headline (max ~220 chars) tailored to the target role and grounded in the profile
-  "postIdea": string,         // one specific LinkedIn post idea (3-5 sentences) the candidate could publish this week, drawing on something concrete in their profile
-  "strengths": string[],      // 3 short bullets (max ~140 chars each) naming real strengths visible in the profile for the target role
-  "improvements": string[]    // 3 short bullets (max ~140 chars each) naming the highest-leverage gaps to fix for the target role
+  "overallScore": number,
+  "insights": {
+    "visibility": { "score": number, "teaser": string },
+    "headline": { "score": number, "teaser": string },
+    "recruiter": { "score": number, "teaser": string }
+  }
 }`
 
 function clampString(value: unknown, max: number): string {
@@ -52,26 +67,46 @@ function extractJson(text: string): unknown {
   return JSON.parse(text.slice(start, end + 1))
 }
 
+function coerceScore(value: unknown): number {
+  return typeof value === 'number' ? Math.max(0, Math.min(100, Math.round(value))) : 0
+}
+
+function coerceInsight(value: unknown): Insight {
+  const v = (value ?? {}) as Record<string, unknown>
+  return {
+    score: coerceScore(v.score),
+    teaser: typeof v.teaser === 'string' ? v.teaser.trim() : '',
+  }
+}
+
 function coerceResult(value: unknown): AnalyzeResult {
   if (!value || typeof value !== 'object') {
     throw new Error('Model response was not an object')
   }
   const v = value as Record<string, unknown>
-  const score = typeof v.score === 'number' ? Math.max(0, Math.min(100, Math.round(v.score))) : 0
-  const headline = typeof v.headline === 'string' ? v.headline.trim() : ''
-  const postIdea = typeof v.postIdea === 'string' ? v.postIdea.trim() : ''
-  const strengths = Array.isArray(v.strengths)
-    ? v.strengths.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
-    : []
-  const improvements = Array.isArray(v.improvements)
-    ? v.improvements.filter((s): s is string => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
-    : []
+  const insightsRaw = (v.insights ?? {}) as Record<string, unknown>
+  const insights = {
+    visibility: coerceInsight(insightsRaw.visibility),
+    headline: coerceInsight(insightsRaw.headline),
+    recruiter: coerceInsight(insightsRaw.recruiter),
+  }
 
-  if (!headline || !postIdea) {
+  if (!insights.visibility.teaser || !insights.headline.teaser || !insights.recruiter.teaser) {
     throw new Error('Model response missing required fields')
   }
 
-  return { score, headline, postIdea, strengths, improvements }
+  const overallScore = coerceScore(v.overallScore) ||
+    Math.round((insights.visibility.score + insights.headline.score + insights.recruiter.score) / 3)
+
+  return { overallScore, insights }
+}
+
+function isLikelyLinkedInUrl(value: string): boolean {
+  return /linkedin\.com\/.+/i.test(value)
+}
+
+function isLikelyEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 function newSessionId(): string {
@@ -92,28 +127,23 @@ export default async (req: Request, _context: Context) => {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const profile = clampString(body.profile, MAX_PROFILE_CHARS)
+  const linkedinUrl = clampString(body.linkedinUrl, MAX_URL_CHARS)
   const role = clampString(body.role, MAX_FIELD_CHARS)
-  const industry = clampString(body.industry, MAX_FIELD_CHARS)
+  const email = clampString(body.email, MAX_FIELD_CHARS)
 
-  if (!profile || profile.length < 40) {
-    return Response.json(
-      { error: 'Please paste a longer LinkedIn profile (at least 40 characters).' },
-      { status: 400 },
-    )
+  if (!linkedinUrl || !isLikelyLinkedInUrl(linkedinUrl)) {
+    return Response.json({ error: 'Please enter a valid LinkedIn profile URL.' }, { status: 400 })
   }
   if (!role) {
     return Response.json({ error: 'Please provide a target role.' }, { status: 400 })
   }
+  if (!email || !isLikelyEmail(email)) {
+    return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 })
+  }
 
   const userPrompt = [
     `Target role: ${role}`,
-    industry ? `Target industry: ${industry}` : 'Target industry: (not specified)',
-    '',
-    'LinkedIn profile text (verbatim from the candidate):',
-    '"""',
-    profile,
-    '"""',
+    `Candidate's public LinkedIn profile URL: ${linkedinUrl}`,
     '',
     'Return only the JSON object specified in the system prompt.',
   ].join('\n')
@@ -122,13 +152,13 @@ export default async (req: Request, _context: Context) => {
   try {
     message = await anthropic.messages.create({
       model: 'claude-opus-4-7',
-      max_tokens: 1500,
+      max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],
     })
   } catch (err) {
     const detail = err instanceof Error ? err.message : 'Unknown error'
-    return Response.json({ error: `Analysis failed: ${detail}` }, { status: 502 })
+    return Response.json({ error: `Audit failed: ${detail}` }, { status: 502 })
   }
 
   const textBlock = message.content.find((block) => block.type === 'text')
@@ -148,9 +178,9 @@ export default async (req: Request, _context: Context) => {
   try {
     const sessions = getStore({ name: 'sessions', consistency: 'strong' })
     await sessions.setJSON(sessionId, {
-      profile,
+      linkedinUrl,
       role,
-      industry,
+      email,
       free: result,
       createdAt: Date.now(),
     })

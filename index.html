@@ -193,6 +193,21 @@ button {
 
 .score span { color: #94a3b8; }
 
+.score-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+
+.score-line strong {
+  font-size: 42px;
+  font-weight: 900;
+  color: #93c5fd;
+}
+
+.score-line span { color: #94a3b8; font-weight: 700; }
+
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -482,33 +497,33 @@ button {
 
   <section id="screen1" class="hero">
     <div>
-      <span class="pill">New &middot; Personalised report in 30 seconds</span>
-      <h1>Stop being invisible on LinkedIn.</h1>
+      <span class="pill">New &middot; Free AI audit in seconds</span>
+      <h1>Turn your LinkedIn into a job offer engine.</h1>
       <p class="sub">
-        Paste your profile, tell us the role you want, and get a recruiter-grade
-        rewrite, a content plan, and a positioning strategy designed to land interviews.
+        Enter your LinkedIn URL and get a free AI-powered audit showing how
+        recruiters may be reading your profile.
       </p>
       <div class="features">
-        <div>Headline rewrite</div>
-        <div>Post ideas</div>
-        <div>Outreach scripts</div>
+        <div>Profile score</div>
+        <div>Recruiter view</div>
+        <div>Instant insights</div>
       </div>
     </div>
 
     <div class="panel">
-      <h3>Generate your report</h3>
-      <p class="muted">Takes 30 seconds. No signup required.</p>
+      <h3>Run your free audit</h3>
+      <p class="muted">Takes seconds. No copy-paste, no signup.</p>
 
-      <label for="profile">Paste your LinkedIn profile</label>
-      <textarea id="profile" placeholder="Copy your About section, experience, and skills..."></textarea>
+      <label for="linkedinUrl">LinkedIn Profile URL</label>
+      <input id="linkedinUrl" type="url" inputmode="url" autocomplete="url" placeholder="https://www.linkedin.com/in/your-name" />
 
-      <label for="role">Target role</label>
+      <label for="role">Target Role</label>
       <input id="role" placeholder="e.g. Senior Product Manager" />
 
-      <label for="industry">Industry (optional)</label>
-      <input id="industry" placeholder="e.g. FinTech, SaaS, Healthcare" />
+      <label for="email">Email Address</label>
+      <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" />
 
-      <button class="primary" id="generateBtn" onclick="generate()">Generate Report</button>
+      <button class="primary" id="generateBtn" onclick="generate()">Run My Free LinkedIn Audit</button>
       <p id="error" class="muted hidden" style="color: #fca5a5; margin-top: 12px;"></p>
     </div>
   </section>
@@ -516,9 +531,9 @@ button {
   <section id="screen2" class="hidden">
     <div class="reportHero">
       <div>
-        <span class="pill success">Your report is ready</span>
-        <h1>Profile audit</h1>
-        <p class="sub">Here's how your profile scores against recruiters searching for your target role.</p>
+        <span class="pill success">Your free LinkedIn audit is ready.</span>
+        <h1>Your LinkedIn audit</h1>
+        <p class="sub">Your profile has clear potential, but there are missed opportunities in visibility, headline positioning and recruiter relevance.</p>
       </div>
       <div class="score">
         <strong id="score">0</strong>
@@ -527,26 +542,31 @@ button {
     </div>
 
     <div class="cards">
-      <div class="card">
-        <h3>New Headline</h3>
-        <p id="headline"></p>
+      <div class="card unlocked">
+        <h3>Visibility score</h3>
+        <div class="score-line"><strong id="visibilityScore">0</strong><span>/ 100</span></div>
+        <p id="visibilityTeaser"></p>
       </div>
 
-      <div class="card">
-        <h3>Post Idea</h3>
-        <p id="postIdea"></p>
+      <div class="card unlocked">
+        <h3>Headline strength</h3>
+        <div class="score-line"><strong id="headlineScore">0</strong><span>/ 100</span></div>
+        <p id="headlineTeaser"></p>
       </div>
 
-      <div class="card">
-        <h3>Strengths</h3>
-        <ul id="strengths" style="margin: 0; padding-left: 20px; color: #d1d5db; line-height: 1.65;"></ul>
+      <div class="card unlocked">
+        <h3>Recruiter relevance</h3>
+        <div class="score-line"><strong id="recruiterScore">0</strong><span>/ 100</span></div>
+        <p id="recruiterTeaser"></p>
       </div>
+    </div>
 
-      <div class="card">
-        <h3>Improvements</h3>
-        <ul id="improvements" style="margin: 0; padding-left: 20px; color: #d1d5db; line-height: 1.65;"></ul>
-      </div>
+    <div class="section-heading">
+      <h2>Your full LinkedIn Leverage Report</h2>
+      <p class="muted">Unlocked instantly after payment — tailored to your target role.</p>
+    </div>
 
+    <div class="cards">
       <div class="card" id="card-about">
         <h3>About Section Rewrite</h3>
         <p class="blur">
@@ -588,9 +608,9 @@ button {
     </div>
 
     <div class="paywall" id="paywall">
-      <h2 id="paywallHeading">Unlock your full report</h2>
+      <h2 id="paywallHeading">Unlock your full LinkedIn Leverage Report for £19.</h2>
       <p id="paywallSub" class="sub" style="margin: 8px auto 22px;">
-        Get the full About rewrite, outreach scripts, 30-day content plan, and positioning strategy.
+        Get the full profile rewrite, improved headline, About section guidance, post ideas and recruiter outreach scripts.
       </p>
       <button class="secondary" id="unlockBtn" onclick="unlock('audit')">Unlock for £19</button>
       <button class="ghost" onclick="reset()">Start Again</button>
@@ -827,12 +847,21 @@ function clearError() {
 
 function renderList(id, items) {
   const ul = document.getElementById(id);
+  if (!ul) return;
   ul.innerHTML = "";
   (items || []).forEach((item) => {
     const li = document.createElement("li");
     li.textContent = item;
     ul.appendChild(li);
   });
+}
+
+function isLikelyLinkedInUrl(value) {
+  return /linkedin\.com\/.+/i.test(value);
+}
+
+function isLikelyEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function persistReport(data) {
@@ -852,54 +881,67 @@ function loadReport() {
   }
 }
 
+function setInsight(key, insight) {
+  const data = insight || {};
+  const scoreEl = document.getElementById(`${key}Score`);
+  const teaserEl = document.getElementById(`${key}Teaser`);
+  if (scoreEl) scoreEl.innerText = data.score ?? 0;
+  if (teaserEl) teaserEl.innerText = data.teaser ?? "";
+}
+
 function renderFreeReport(data) {
-  document.getElementById("score").innerText = data.score ?? 0;
-  document.getElementById("headline").innerText = data.headline ?? "";
-  document.getElementById("postIdea").innerText = data.postIdea ?? "";
-  renderList("strengths", data.strengths);
-  renderList("improvements", data.improvements);
+  document.getElementById("score").innerText = data.overallScore ?? 0;
+  const insights = data.insights || {};
+  setInsight("visibility", insights.visibility);
+  setInsight("headline", insights.headline);
+  setInsight("recruiter", insights.recruiter);
   document.getElementById("screen1").classList.add("hidden");
   document.getElementById("screen2").classList.remove("hidden");
 }
 
 async function generate() {
-  const profile = document.getElementById("profile").value.trim();
+  const linkedinUrl = document.getElementById("linkedinUrl").value.trim();
   const role = document.getElementById("role").value.trim();
-  const industry = document.getElementById("industry").value.trim();
+  const email = document.getElementById("email").value.trim();
   const btn = document.getElementById("generateBtn");
 
   clearError();
 
-  if (!profile || !role) {
-    showError("Please paste your profile and add a target role.");
+  if (!linkedinUrl || !role || !email) {
+    showError("Please add your LinkedIn URL, target role and email.");
+    return;
+  }
+  if (!isLikelyLinkedInUrl(linkedinUrl)) {
+    showError("Please enter a valid LinkedIn profile URL.");
+    return;
+  }
+  if (!isLikelyEmail(email)) {
+    showError("Please enter a valid email address.");
     return;
   }
 
   const originalLabel = btn.innerText;
   btn.disabled = true;
-  btn.innerText = "Analysing your profile…";
+  btn.innerText = "Running your audit…";
 
   try {
     const res = await fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile, role, industry }),
+      body: JSON.stringify({ linkedinUrl, role, email }),
     });
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      showError(data.error || `Analysis failed (${res.status}).`);
+      showError(data.error || `Audit failed (${res.status}).`);
       return;
     }
 
     persistReport({
       sessionId: data.sessionId,
-      score: data.score,
-      headline: data.headline,
-      postIdea: data.postIdea,
-      strengths: data.strengths,
-      improvements: data.improvements,
+      overallScore: data.overallScore,
+      insights: data.insights,
     });
 
     renderFreeReport(data);
