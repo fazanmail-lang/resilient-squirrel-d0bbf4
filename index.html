@@ -484,6 +484,29 @@ button {
 
 <div class="app">
 
+  <!--
+    Hidden Netlify Form used for lead capture. Netlify's build bot parses this
+    static markup at deploy time to register the "linkedin-leverage-audit-leads"
+    form and create its submission endpoint. Submissions are sent via JavaScript
+    (see captureLead) so the user never leaves the page. View / export leads at:
+    Netlify Dashboard → Site → Forms → linkedin-leverage-audit-leads
+  -->
+  <form name="linkedin-leverage-audit-leads" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="linkedin-leverage-audit-leads" />
+    <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
+    <input type="url" name="linkedin_url" />
+    <input type="text" name="target_role" />
+    <input type="email" name="email" />
+    <input type="text" name="timestamp" />
+    <input type="text" name="audit_score" />
+    <input type="text" name="visibility_score" />
+    <input type="text" name="headline_strength_score" />
+    <input type="text" name="recruiter_relevance_score" />
+    <input type="text" name="payment_status" value="Not Paid" />
+    <input type="text" name="source_page" />
+    <input type="text" name="funnel_stage" value="Free Audit Completed - Payment Pending" />
+  </form>
+
   <header>
     <div class="brand">
       <div class="logo">Li</div>
@@ -833,6 +856,48 @@ const PAYMENT_LINKS = {
   executive: EXECUTIVE_PAYMENT_LINK,
 };
 
+const LEAD_FORM_NAME = "linkedin-leverage-audit-leads";
+
+// Submit the lead to Netlify Forms in the background. Resolves true on success,
+// false on failure — the caller still reveals the audit either way so the user
+// never loses progress.
+async function captureLead({ linkedinUrl, role, email, data }) {
+  const insights = (data && data.insights) || {};
+  const scoreOf = (key) =>
+    insights[key] && insights[key].score != null ? String(insights[key].score) : "";
+
+  const payload = {
+    "form-name": LEAD_FORM_NAME,
+    linkedin_url: linkedinUrl,
+    target_role: role,
+    email: email,
+    timestamp: new Date().toISOString(),
+    audit_score: data && data.overallScore != null ? String(data.overallScore) : "",
+    visibility_score: scoreOf("visibility"),
+    headline_strength_score: scoreOf("headline"),
+    recruiter_relevance_score: scoreOf("recruiter"),
+    payment_status: "Not Paid",
+    source_page: window.location.href,
+    funnel_stage: "Free Audit Completed - Payment Pending",
+  };
+
+  try {
+    const res = await fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(payload).toString(),
+    });
+    if (!res.ok) {
+      console.error(`Lead capture failed: Netlify Forms returned ${res.status}.`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Lead capture failed:", err);
+    return false;
+  }
+}
+
 function showError(message) {
   const el = document.getElementById("error");
   el.innerText = message;
@@ -943,6 +1008,10 @@ async function generate() {
       overallScore: data.overallScore,
       insights: data.insights,
     });
+
+    // Capture the lead in Netlify Forms before revealing the preview. A failed
+    // submission is logged but never blocks the user from seeing their audit.
+    await captureLead({ linkedinUrl, role, email, data });
 
     renderFreeReport(data);
     window.scrollTo(0, 0);
